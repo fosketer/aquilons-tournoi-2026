@@ -590,6 +590,30 @@
             font-weight: 400;
         }
 
+        .adv-stats {
+            padding: 0.3rem 0 0 0;
+            margin-left: 0;
+        }
+        .adv-school {
+            font-size: 0.65rem;
+            color: var(--silver-dark);
+            font-style: italic;
+        }
+        .adv-ecole { font-size: 0.6rem; color: var(--gray); }
+        .adv-stat-row {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 0.15rem;
+        }
+        .adv-stat {
+            font-size: 0.65rem;
+            color: var(--gray);
+        }
+        .adv-stat b {
+            color: var(--silver-light);
+            font-weight: 600;
+        }
+
         .match-live-score {
             padding: 0 1rem 0.5rem;
             font-size: 0.8rem;
@@ -721,7 +745,7 @@
     // ADVERSAIRES
     // ==========================================
     async function loadAdversaires() {
-        var res = await sb.from('adversaires').select('nom_tournoi,region_rseq,rang_regional').eq('tournoi_id', TOURNOI_ID);
+        var res = await sb.from('adversaires').select('nom_tournoi,region_rseq,rang_regional,nom_officiel,ecole,sets_gagnes,sets_perdus,points_pour,points_contre,matchs_joues').eq('tournoi_id', TOURNOI_ID);
         if (res.data) res.data.forEach(function(a) { adversairesMap[a.nom_tournoi] = a; });
     }
 
@@ -741,6 +765,25 @@
         if (a.region_rseq) parts.push(a.region_rseq);
         if (a.rang_regional) parts.push(a.rang_regional + (a.rang_regional === 1 ? 'er' : 'e') + ' r\u00e9gional');
         return parts.join(' \u00b7 ');
+    }
+
+    function advStatsHtml(nom) {
+        var a = adversairesMap[nom];
+        if (!a) return '';
+        var hasStats = a.sets_gagnes != null && a.sets_perdus != null;
+        if (!hasStats && !a.nom_officiel && !a.ecole) return '';
+        var html = '<div class="adv-stats">';
+        if (a.nom_officiel) html += '<div class="adv-school">' + a.nom_officiel + (a.ecole ? ' <span class="adv-ecole">(' + a.ecole + ')</span>' : '') + '</div>';
+        else if (a.ecole) html += '<div class="adv-school">' + a.ecole + '</div>';
+        if (hasStats) {
+            html += '<div class="adv-stat-row">';
+            html += '<span class="adv-stat">Sets: <b>' + a.sets_gagnes + 'G-' + a.sets_perdus + 'P</b></span>';
+            if (a.points_pour != null) html += '<span class="adv-stat">Pts: <b>' + a.points_pour + '-' + a.points_contre + '</b></span>';
+            if (a.matchs_joues != null) html += '<span class="adv-stat">MJ: <b>' + a.matchs_joues + '</b></span>';
+            html += '</div>';
+        }
+        html += '</div>';
+        return html;
     }
 
     // ==========================================
@@ -818,6 +861,7 @@
                     '</div>' +
                     '<div class="team-row">' +
                         '<span class="team-label">' + m.adversaire + advInfoHtml(m.adversaire) + '</span>' +
+                        advStatsHtml(m.adversaire) +
                         '<div class="set-scores">' +
                             '<span class="set-score ' + s1.advCls + '">' + s1.adv + '</span>' +
                             '<span class="set-score ' + s2.advCls + '">' + s2.adv + '</span>' +
