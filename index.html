@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Aquilons - Tournoi CVS 2026</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
@@ -30,6 +30,8 @@
             color: var(--white);
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         /* HEADER */
@@ -127,14 +129,8 @@
             transition: all 0.3s;
         }
 
-        .nav a:hover {
-            color: var(--silver-light);
-        }
-
-        .nav a.active {
-            color: var(--blue-light);
-            border-bottom-color: var(--blue);
-        }
+        .nav a:hover { color: var(--silver-light); }
+        .nav a.active { color: var(--blue-light); border-bottom-color: var(--blue); }
 
         /* BILAN */
         .bilan {
@@ -146,9 +142,7 @@
             border-bottom: 1px solid rgba(26,86,184,0.2);
         }
 
-        .bilan-item {
-            text-align: center;
-        }
+        .bilan-item { text-align: center; }
 
         .bilan-number {
             font-family: 'Oswald', sans-serif;
@@ -175,6 +169,247 @@
             background: rgba(26,86,184,0.25);
             align-self: stretch;
         }
+
+        /* LIVE SCOREKEEPER */
+        .scorekeeper {
+            display: none;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0.8rem 1rem 0;
+        }
+
+        .scorekeeper.show { display: block; }
+
+        .sk-match-select {
+            text-align: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .sk-match-select select {
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(26,86,184,0.3);
+            background: var(--bg-card);
+            color: var(--white);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .sk-panel {
+            display: none;
+            background: var(--bg-card);
+            border: 1px solid rgba(26,86,184,0.25);
+            border-radius: 12px;
+            padding: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sk-panel.show { display: block; }
+
+        .sk-set-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 0.6rem;
+            margin-bottom: 0.6rem;
+            align-items: center;
+        }
+
+        .sk-set-label {
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.65rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+
+        .sk-set-bubble {
+            width: 1.8rem;
+            height: 1.8rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 2px solid rgba(26,86,184,0.2);
+            color: var(--silver-dark);
+            background: transparent;
+            transition: all 0.3s;
+        }
+
+        .sk-set-bubble.active { border-color: var(--blue); color: var(--blue-light); background: rgba(26,86,184,0.1); }
+        .sk-set-bubble.won { border-color: var(--win); color: var(--win); background: rgba(76,175,80,0.1); }
+        .sk-set-bubble.lost { border-color: var(--loss); color: var(--loss); background: rgba(229,57,53,0.1); }
+
+        .sk-scoreboard {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sk-side {
+            flex: 1;
+            text-align: center;
+            padding: 0.8rem 0.3rem;
+            border-radius: 10px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.15s;
+        }
+
+        .sk-side:active { transform: scale(0.97); }
+
+        .sk-side.aq {
+            background: linear-gradient(180deg, rgba(26,86,184,0.2) 0%, rgba(26,86,184,0.08) 100%);
+            border: 2px solid rgba(26,86,184,0.3);
+        }
+
+        .sk-side.aq:active { background: linear-gradient(180deg, rgba(26,86,184,0.35) 0%, rgba(26,86,184,0.15) 100%); border-color: var(--blue-light); }
+
+        .sk-side.adv {
+            background: linear-gradient(180deg, rgba(168,169,173,0.12) 0%, rgba(168,169,173,0.04) 100%);
+            border: 2px solid rgba(168,169,173,0.2);
+        }
+
+        .sk-side.adv:active { background: linear-gradient(180deg, rgba(168,169,173,0.25) 0%, rgba(168,169,173,0.1) 100%); border-color: var(--silver); }
+
+        .sk-team-name {
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.2rem;
+        }
+
+        .sk-side.aq .sk-team-name { color: var(--blue-light); }
+        .sk-side.adv .sk-team-name { color: var(--silver); }
+
+        .sk-adv-info {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.55rem;
+            color: var(--gray);
+            text-transform: none;
+            letter-spacing: 0.02em;
+            margin-bottom: 0.2rem;
+        }
+
+        .sk-points {
+            font-family: 'Oswald', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--white);
+            text-shadow: 0 2px 15px rgba(0,0,0,0.5);
+        }
+
+        .sk-tap-hint {
+            font-size: 0.55rem;
+            color: var(--gray);
+            margin-top: 0.3rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .sk-controls {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .sk-btn {
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(26,86,184,0.2);
+            background: var(--bg);
+            color: var(--gray);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .sk-btn:active { transform: scale(0.95); }
+        .sk-btn:hover { color: var(--white); border-color: rgba(26,86,184,0.4); }
+        .sk-btn.danger { border-color: rgba(229,57,53,0.2); }
+        .sk-btn.danger:hover { color: var(--loss); border-color: rgba(229,57,53,0.4); }
+
+        .sk-set-history {
+            margin-top: 0.5rem;
+        }
+
+        .sk-set-result {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.35rem 0.6rem;
+            background: var(--bg);
+            border: 1px solid rgba(26,86,184,0.1);
+            border-radius: 6px;
+            margin-bottom: 0.3rem;
+            font-family: 'Oswald', sans-serif;
+        }
+
+        .sk-set-result .sn { font-size: 0.7rem; color: var(--gray); width: 2.5rem; }
+        .sk-set-result .ss { font-size: 0.95rem; letter-spacing: 0.05em; }
+        .sk-set-result .ss.won { color: var(--win); }
+        .sk-set-result .ss.lost { color: var(--loss); }
+        .sk-set-result .sw {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 0.1rem 0.4rem;
+            border-radius: 8px;
+        }
+        .sk-set-result .sw.aq { background: rgba(76,175,80,0.1); color: var(--win); }
+        .sk-set-result .sw.adv { background: rgba(229,57,53,0.1); color: var(--loss); }
+
+        .sk-result-banner {
+            display: none;
+            text-align: center;
+            padding: 0.8rem;
+            border-radius: 10px;
+            margin-top: 0.5rem;
+        }
+
+        .sk-result-banner.show { display: block; }
+        .sk-result-banner.win-banner { background: linear-gradient(135deg, rgba(76,175,80,0.15), rgba(76,175,80,0.05)); border: 1px solid rgba(76,175,80,0.3); }
+        .sk-result-banner.loss-banner { background: linear-gradient(135deg, rgba(229,57,53,0.15), rgba(229,57,53,0.05)); border: 1px solid rgba(229,57,53,0.3); }
+
+        .sk-result-banner .rt {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+        .win-banner .rt { color: var(--win); }
+        .loss-banner .rt { color: var(--loss); }
+
+        .sk-result-banner .rd {
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-top: 0.2rem;
+        }
+
+        .sk-sync {
+            text-align: center;
+            padding: 0.2rem;
+            font-size: 0.55rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .sk-sync.connected { color: var(--win); }
+        .sk-sync.error { color: var(--loss); }
+
+        .sk-scoreboard.disabled .sk-side { pointer-events: none; opacity: 0.4; }
+        .sk-controls.disabled .sk-btn { pointer-events: none; opacity: 0.4; }
 
         /* MATCHES */
         .matches {
@@ -213,22 +448,10 @@
             transition: border-color 0.3s;
         }
 
-        .match-card:hover {
-            border-color: rgba(26,86,184,0.4);
-        }
-
-        .match-card.win {
-            border-left: 3px solid var(--win);
-        }
-
-        .match-card.loss {
-            border-left: 3px solid var(--loss);
-        }
-
-        .match-card.upcoming {
-            border-left: 3px solid var(--silver-dark);
-            opacity: 0.7;
-        }
+        .match-card:hover { border-color: rgba(26,86,184,0.4); }
+        .match-card.win { border-left: 3px solid var(--win); }
+        .match-card.loss { border-left: 3px solid var(--loss); }
+        .match-card.upcoming { border-left: 3px solid var(--silver-dark); opacity: 0.7; }
 
         .match-card.live {
             border-left: 3px solid var(--blue);
@@ -262,20 +485,9 @@
             font-weight: 600;
         }
 
-        .badge-win {
-            background: rgba(76,175,80,0.15);
-            color: var(--win);
-        }
-
-        .badge-loss {
-            background: rgba(229,57,53,0.15);
-            color: var(--loss);
-        }
-
-        .badge-upcoming {
-            background: rgba(168,169,173,0.1);
-            color: var(--silver-dark);
-        }
+        .badge-win { background: rgba(76,175,80,0.15); color: var(--win); }
+        .badge-loss { background: rgba(229,57,53,0.15); color: var(--loss); }
+        .badge-upcoming { background: rgba(168,169,173,0.1); color: var(--silver-dark); }
 
         .badge-live {
             background: rgba(26,86,184,0.2);
@@ -295,9 +507,7 @@
             gap: 0.8rem;
         }
 
-        .match-teams {
-            flex: 1;
-        }
+        .match-teams { flex: 1; }
 
         .team-row {
             display: flex;
@@ -306,21 +516,10 @@
             padding: 0.2rem 0;
         }
 
-        .team-label {
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
+        .team-label { font-size: 0.9rem; font-weight: 500; }
+        .team-label.is-aquilon { color: var(--blue-light); font-weight: 600; }
 
-        .team-label.is-aquilon {
-            color: var(--blue-light);
-            font-weight: 600;
-        }
-
-        .set-scores {
-            display: flex;
-            gap: 0.4rem;
-            align-items: center;
-        }
+        .set-scores { display: flex; gap: 0.4rem; align-items: center; }
 
         .set-score {
             font-family: 'Oswald', sans-serif;
@@ -330,13 +529,13 @@
             color: var(--white);
         }
 
-        .set-score.won {
+        .set-score.won { color: var(--blue-light); font-weight: 700; }
+        .set-score.lost { color: var(--silver-dark); }
+
+        .set-score.live-score {
             color: var(--blue-light);
             font-weight: 700;
-        }
-
-        .set-score.lost {
-            color: var(--silver-dark);
+            animation: pulse-text 1.5s infinite;
         }
 
         .match-location {
@@ -351,9 +550,7 @@
             border-bottom: 1px dotted rgba(128,144,168,0.4);
         }
 
-        .match-location a:hover {
-            color: var(--blue-light);
-        }
+        .match-location a:hover { color: var(--blue-light); }
 
         .team-info {
             font-size: 0.65rem;
@@ -406,7 +603,6 @@
     <div class="nav">
         <a href="index.html" class="active">R&eacute;sultats</a>
         <a href="horaire.html">Horaire</a>
-        <a href="match.html">Match</a>
     </div>
 
     <!-- BILAN -->
@@ -432,6 +628,49 @@
         </div>
     </div>
 
+    <!-- SCOREKEEPER -->
+    <div class="scorekeeper" id="scorekeeper">
+        <div class="sk-match-select">
+            <select id="skMatchSelect" onchange="skSelectMatch()">
+                <option value="">-- Marquer un match --</option>
+                <option value="1" data-adv="Husky JDN" data-time="9h30">Match 1 - 9h30 vs Husky JDN</option>
+                <option value="2" data-adv="Bleu et Or" data-time="10h30">Match 2 - 10h30 vs Bleu et Or</option>
+                <option value="3" data-adv="Express U14" data-time="11h30">Match 3 - 11h30 vs Express U14</option>
+                <option value="4" data-adv="Les Condors" data-time="14h30">Match 4 - 14h30 vs Les Condors</option>
+                <option value="5" data-adv="Bleu et Or" data-time="16h30">Match 5 - 16h30 vs Bleu et Or</option>
+                <option value="6" data-adv="Tigres d'Am&eacute;" data-time="17h30">Match 6 - 17h30 vs Tigres d'Am&eacute;</option>
+                <option value="7" data-adv="Husky KS" data-time="19h30">Match 7 - 19h30 vs Husky KS</option>
+            </select>
+        </div>
+        <div class="sk-panel" id="skPanel">
+            <div class="sk-set-indicator">
+                <span class="sk-set-label">Sets</span>
+                <div class="sk-set-bubble active" id="skBub1">1</div>
+                <div class="sk-set-bubble" id="skBub2">2</div>
+            </div>
+            <div class="sk-scoreboard" id="skScoreboard">
+                <div class="sk-side aq" onclick="skPoint('aq')">
+                    <div class="sk-team-name">Aquilons</div>
+                    <div class="sk-points" id="skScoreAq">0</div>
+                    <div class="sk-tap-hint">Toucher = +1</div>
+                </div>
+                <div class="sk-side adv" onclick="skPoint('adv')">
+                    <div class="sk-team-name" id="skAdvName">Adversaire</div>
+                    <div class="sk-adv-info" id="skAdvInfo"></div>
+                    <div class="sk-points" id="skScoreAdv">0</div>
+                    <div class="sk-tap-hint">Toucher = +1</div>
+                </div>
+            </div>
+            <div class="sk-controls" id="skControls">
+                <button class="sk-btn danger" onclick="skUndo()">Annuler</button>
+                <button class="sk-btn" onclick="skResetSet()">Reset set</button>
+            </div>
+            <div class="sk-set-history" id="skSetHistory"></div>
+            <div class="sk-result-banner" id="skResult"></div>
+            <div class="sk-sync" id="skSync"></div>
+        </div>
+    </div>
+
     <!-- MATCHS -->
     <div class="matches">
         <div class="section-title">Matchs du jour</div>
@@ -444,33 +683,25 @@
     </div>
 
 <script>
-    const SUPABASE_URL = 'https://rtbmpcitrymeqzpjwneh.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Ym1wY2l0cnltZXF6cGp3bmVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NDgyOTEsImV4cCI6MjA4ODQyNDI5MX0.6qvaCDLDiCX4KZLJHK1_JiPHROoCtiiEQjsBJbS4CiU';
-    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    const TOURNOI_ID = 'a0000000-0000-0000-0000-000000000001';
+    // ==========================================
+    // SUPABASE INIT
+    // ==========================================
+    var SUPABASE_URL = 'https://rtbmpcitrymeqzpjwneh.supabase.co';
+    var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Ym1wY2l0cnltZXF6cGp3bmVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NDgyOTEsImV4cCI6MjA4ODQyNDI5MX0.6qvaCDLDiCX4KZLJHK1_JiPHROoCtiiEQjsBJbS4CiU';
+    var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    var TOURNOI_ID = 'a0000000-0000-0000-0000-000000000001';
 
-    let adversairesMap = {};
+    var adversairesMap = {};
 
+    // ==========================================
+    // ADVERSAIRES
+    // ==========================================
     async function loadAdversaires() {
-        const { data } = await sb.from('adversaires').select('nom_tournoi,region_rseq,rang_regional').eq('tournoi_id', TOURNOI_ID);
-        if (!data) return;
-        data.forEach(function(a) { adversairesMap[a.nom_tournoi] = a; });
+        var res = await sb.from('adversaires').select('nom_tournoi,region_rseq,rang_regional').eq('tournoi_id', TOURNOI_ID);
+        if (res.data) res.data.forEach(function(a) { adversairesMap[a.nom_tournoi] = a; });
     }
 
-    async function loadMatchs() {
-        const { data } = await sb.from('matchs').select('*').eq('tournoi_id', TOURNOI_ID).order('numero');
-        if (!data) return;
-        renderMatchs(data);
-        updateBilan(data);
-    }
-
-    function scoreCell(aqScore, advScore) {
-        if (aqScore == null) return { aq: '-', adv: '-', aqCls: '', advCls: '' };
-        const won = aqScore > advScore;
-        return { aq: aqScore, adv: advScore, aqCls: won ? 'won' : 'lost', advCls: won ? 'lost' : 'won' };
-    }
-
-    function advInfo(nom) {
+    function advInfoHtml(nom) {
         var a = adversairesMap[nom];
         if (!a) return '';
         var parts = [];
@@ -479,23 +710,57 @@
         return parts.length ? '<span class="team-info"> \u2014 ' + parts.join(' \u00b7 ') + '</span>' : '';
     }
 
+    function advInfoText(nom) {
+        var a = adversairesMap[nom];
+        if (!a) return '';
+        var parts = [];
+        if (a.region_rseq) parts.push(a.region_rseq);
+        if (a.rang_regional) parts.push(a.rang_regional + (a.rang_regional === 1 ? 'er' : 'e') + ' r\u00e9gional');
+        return parts.join(' \u00b7 ');
+    }
+
+    // ==========================================
+    // MATCH LIST (spectator view)
+    // ==========================================
+    async function loadMatchs() {
+        var res = await sb.from('matchs').select('*').eq('tournoi_id', TOURNOI_ID).order('numero');
+        if (!res.data) return;
+        renderMatchs(res.data);
+        updateBilan(res.data);
+    }
+
+    function scoreCell(aqScore, advScore) {
+        if (aqScore == null) return { aq: '-', adv: '-', aqCls: '', advCls: '' };
+        var won = aqScore > advScore;
+        return { aq: aqScore, adv: advScore, aqCls: won ? 'won' : 'lost', advCls: won ? 'lost' : 'won' };
+    }
+
     function renderMatchs(matchs) {
-        const container = document.getElementById('matchsContainer');
-        const statusMap = {
+        var container = document.getElementById('matchsContainer');
+        var statusMap = {
             win:  { cls: 'win', badge: 'badge-win', text: 'Victoire' },
             loss: { cls: 'loss', badge: 'badge-loss', text: 'D\u00e9faite' },
             live: { cls: 'live', badge: 'badge-live', text: '\u25CF En cours' }
         };
-        const defaultSt = { cls: 'upcoming', badge: 'badge-upcoming', text: '\u00c0 venir' };
+        var defaultSt = { cls: 'upcoming', badge: 'badge-upcoming', text: '\u00c0 venir' };
 
         container.innerHTML = matchs.map(function(m) {
             var st = statusMap[m.statut] || defaultSt;
             var s1 = scoreCell(m.aq_set1, m.adv_set1);
             var s2 = scoreCell(m.aq_set2, m.adv_set2);
 
+            // For live match, show current score as a third column
+            var liveCol = '';
+            if (m.statut === 'live' && m.set_courant > 0) {
+                liveCol =
+                    '<span class="set-score live-score">' + m.aq_score_courant + '</span>';
+                var liveColAdv =
+                    '<span class="set-score live-score">' + m.adv_score_courant + '</span>';
+            }
+
             var liveInfo = '';
             if (m.statut === 'live' && m.set_courant > 0) {
-                liveInfo = '<div class="match-live-score">Set ' + m.set_courant + ' en cours : ' + m.aq_score_courant + ' - ' + m.adv_score_courant + '</div>';
+                liveInfo = '<div class="match-live-score">Set ' + m.set_courant + ' en cours</div>';
             }
 
             return '<div class="match-card ' + st.cls + '">' +
@@ -509,13 +774,15 @@
                         '<div class="set-scores">' +
                             '<span class="set-score ' + s1.aqCls + '">' + s1.aq + '</span>' +
                             '<span class="set-score ' + s2.aqCls + '">' + s2.aq + '</span>' +
+                            (liveCol || '') +
                         '</div>' +
                     '</div>' +
                     '<div class="team-row">' +
-                        '<span class="team-label">' + m.adversaire + advInfo(m.adversaire) + '</span>' +
+                        '<span class="team-label">' + m.adversaire + advInfoHtml(m.adversaire) + '</span>' +
                         '<div class="set-scores">' +
                             '<span class="set-score ' + s1.advCls + '">' + s1.adv + '</span>' +
                             '<span class="set-score ' + s2.advCls + '">' + s2.adv + '</span>' +
+                            (liveColAdv || '') +
                         '</div>' +
                     '</div>' +
                 '</div></div>' +
@@ -550,12 +817,289 @@
         document.getElementById('bilanSetsL').textContent = setsL;
     }
 
-    // Realtime: recharger quand un match change
+    // ==========================================
+    // SCOREKEEPER STATE
+    // ==========================================
+    var sk = {
+        matchNum: null,
+        advName: '',
+        currentSet: 1,
+        aqScore: 0,
+        advScore: 0,
+        sets: [],
+        pointLog: [],
+        matchDone: false
+    };
+
+    var matchDbId = null;
+    var SK_KEY = 'aquilons-match-state';
+
+    function skSave() {
+        try { localStorage.setItem(SK_KEY, JSON.stringify(sk)); } catch(e) {}
+    }
+
+    function skLoad() {
+        try {
+            var s = localStorage.getItem(SK_KEY);
+            if (s) {
+                sk = JSON.parse(s);
+                if (sk.matchNum) {
+                    document.getElementById('skMatchSelect').value = sk.matchNum;
+                    document.getElementById('skAdvName').textContent = sk.advName;
+                    document.getElementById('skAdvInfo').textContent = advInfoText(sk.advName);
+                    document.getElementById('skPanel').classList.add('show');
+                    skApplyUI();
+                    sb.from('matchs').select('id')
+                        .eq('tournoi_id', TOURNOI_ID)
+                        .eq('numero', parseInt(sk.matchNum))
+                        .single()
+                        .then(function(res) { if (res.data) matchDbId = res.data.id; });
+                }
+            }
+        } catch(e) {}
+    }
+
+    // ==========================================
+    // SCOREKEEPER UI
+    // ==========================================
+    function skApplyUI() {
+        document.getElementById('skScoreAq').textContent = sk.aqScore;
+        document.getElementById('skScoreAdv').textContent = sk.advScore;
+        skUpdateBubbles();
+        skRenderSetHistory();
+        if (sk.matchDone) skShowResult();
+        skUpdateDisabled();
+    }
+
+    function skUpdateBubbles() {
+        var b1 = document.getElementById('skBub1');
+        var b2 = document.getElementById('skBub2');
+        b1.className = 'sk-set-bubble';
+        b2.className = 'sk-set-bubble';
+        if (sk.sets.length === 0) {
+            b1.classList.add('active');
+        } else if (sk.sets.length === 1) {
+            b1.classList.add(sk.sets[0].aq > sk.sets[0].adv ? 'won' : 'lost');
+            b2.classList.add('active');
+        } else {
+            b1.classList.add(sk.sets[0].aq > sk.sets[0].adv ? 'won' : 'lost');
+            b2.classList.add(sk.sets[1].aq > sk.sets[1].adv ? 'won' : 'lost');
+        }
+    }
+
+    function skRenderSetHistory() {
+        document.getElementById('skSetHistory').innerHTML = sk.sets.map(function(s, i) {
+            var won = s.aq > s.adv;
+            return '<div class="sk-set-result">' +
+                '<span class="sn">Set ' + (i + 1) + '</span>' +
+                '<span class="ss ' + (won ? 'won' : 'lost') + '">' + s.aq + ' - ' + s.adv + '</span>' +
+                '<span class="sw ' + (won ? 'aq' : 'adv') + '">' + (won ? 'Aquilons' : sk.advName) + '</span>' +
+            '</div>';
+        }).join('');
+    }
+
+    function skUpdateDisabled() {
+        var disabled = !sk.matchNum || sk.matchDone;
+        document.getElementById('skScoreboard').className = 'sk-scoreboard' + (disabled ? ' disabled' : '');
+        document.getElementById('skControls').className = 'sk-controls' + (disabled ? ' disabled' : '');
+    }
+
+    function skSetSync(text, cls) {
+        var el = document.getElementById('skSync');
+        el.textContent = text;
+        el.className = 'sk-sync ' + (cls || '');
+    }
+
+    // ==========================================
+    // SCOREKEEPER SYNC
+    // ==========================================
+    function skSync() {
+        if (!matchDbId) return;
+        var updates = {
+            aq_score_courant: sk.aqScore,
+            adv_score_courant: sk.advScore,
+            set_courant: sk.currentSet,
+            aq_set1: sk.sets.length >= 1 ? sk.sets[0].aq : null,
+            adv_set1: sk.sets.length >= 1 ? sk.sets[0].adv : null,
+            aq_set2: sk.sets.length >= 2 ? sk.sets[1].aq : null,
+            adv_set2: sk.sets.length >= 2 ? sk.sets[1].adv : null
+        };
+        if (sk.matchDone) {
+            var setsWon = sk.sets.filter(function(s) { return s.aq > s.adv; }).length;
+            updates.statut = setsWon > sk.sets.length - setsWon ? 'win' : 'loss';
+            updates.set_courant = 0;
+        } else {
+            updates.statut = 'live';
+        }
+        sb.from('matchs').update(updates).eq('id', matchDbId).then(function(res) {
+            if (res.error) skSetSync('Erreur sync', 'error');
+            else skSetSync('Sync OK', 'connected');
+        });
+    }
+
+    // ==========================================
+    // SCOREKEEPER ACTIONS
+    // ==========================================
+    function skSelectMatch() {
+        var sel = document.getElementById('skMatchSelect');
+        var opt = sel.options[sel.selectedIndex];
+        if (!opt.value) {
+            document.getElementById('skPanel').classList.remove('show');
+            return;
+        }
+
+        sk = {
+            matchNum: opt.value,
+            advName: opt.dataset.adv,
+            currentSet: 1,
+            aqScore: 0,
+            advScore: 0,
+            sets: [],
+            pointLog: [],
+            matchDone: false
+        };
+
+        document.getElementById('skAdvName').textContent = sk.advName;
+        document.getElementById('skAdvInfo').textContent = advInfoText(sk.advName);
+        document.getElementById('skScoreAq').textContent = '0';
+        document.getElementById('skScoreAdv').textContent = '0';
+        document.getElementById('skSetHistory').innerHTML = '';
+        document.getElementById('skResult').className = 'sk-result-banner';
+        document.getElementById('skResult').innerHTML = '';
+        document.getElementById('skPanel').classList.add('show');
+        skUpdateBubbles();
+        skUpdateDisabled();
+        skSave();
+
+        sb.from('matchs').select('id')
+            .eq('tournoi_id', TOURNOI_ID)
+            .eq('numero', parseInt(opt.value))
+            .single()
+            .then(function(res) {
+                if (res.data) {
+                    matchDbId = res.data.id;
+                    sb.from('points').delete().eq('match_id', matchDbId).then(function() { skSync(); });
+                }
+            });
+    }
+
+    function skPoint(team) {
+        if (!sk.matchNum || sk.matchDone) return;
+        if (sk.currentSet > 2) return;
+
+        if (team === 'aq') sk.aqScore++;
+        else sk.advScore++;
+        sk.pointLog.push(team);
+
+        document.getElementById('skScoreAq').textContent = sk.aqScore;
+        document.getElementById('skScoreAdv').textContent = sk.advScore;
+
+        if (matchDbId) {
+            sb.from('points').insert({
+                match_id: matchDbId,
+                set_num: sk.currentSet,
+                equipe: team,
+                aq_score: sk.aqScore,
+                adv_score: sk.advScore
+            }).then(function() {});
+        }
+
+        skCheckSetEnd();
+        skSave();
+        skSync();
+    }
+
+    function skCheckSetEnd() {
+        var aq = sk.aqScore, adv = sk.advScore;
+        if ((aq >= 25 || adv >= 25) && Math.abs(aq - adv) >= 2) {
+            sk.sets.push({ aq: aq, adv: adv });
+            skRenderSetHistory();
+            skUpdateBubbles();
+
+            if (sk.sets.length >= 2) {
+                sk.matchDone = true;
+                skShowResult();
+                skUpdateDisabled();
+            } else {
+                sk.currentSet = 2;
+                sk.aqScore = 0;
+                sk.advScore = 0;
+                sk.pointLog = [];
+                document.getElementById('skScoreAq').textContent = '0';
+                document.getElementById('skScoreAdv').textContent = '0';
+                skUpdateBubbles();
+            }
+        }
+    }
+
+    function skShowResult() {
+        var setsWon = sk.sets.filter(function(s) { return s.aq > s.adv; }).length;
+        var won = setsWon > sk.sets.length - setsWon;
+        var banner = document.getElementById('skResult');
+        banner.className = 'sk-result-banner show ' + (won ? 'win-banner' : 'loss-banner');
+        banner.innerHTML =
+            '<div class="rt">' + (won ? 'Victoire!' : 'D\u00e9faite') + '</div>' +
+            '<div class="rd">Set 1: ' + sk.sets[0].aq + '-' + sk.sets[0].adv +
+            ' \u00b7 Set 2: ' + sk.sets[1].aq + '-' + sk.sets[1].adv + '</div>';
+    }
+
+    function skUndo() {
+        if (!sk.matchNum || sk.matchDone || sk.pointLog.length === 0) return;
+        var last = sk.pointLog.pop();
+        if (last === 'aq') sk.aqScore = Math.max(0, sk.aqScore - 1);
+        else sk.advScore = Math.max(0, sk.advScore - 1);
+        document.getElementById('skScoreAq').textContent = sk.aqScore;
+        document.getElementById('skScoreAdv').textContent = sk.advScore;
+        skSave();
+
+        if (matchDbId) {
+            sb.from('points').select('id')
+                .eq('match_id', matchDbId)
+                .order('id', { ascending: false })
+                .limit(1)
+                .then(function(res) {
+                    if (res.data && res.data[0]) sb.from('points').delete().eq('id', res.data[0].id).then(function() {});
+                });
+            skSync();
+        }
+    }
+
+    function skResetSet() {
+        if (!sk.matchNum || sk.matchDone) return;
+        if (!confirm('Remettre le set \u00e0 z\u00e9ro?')) return;
+        sk.aqScore = 0;
+        sk.advScore = 0;
+        sk.pointLog = [];
+        document.getElementById('skScoreAq').textContent = '0';
+        document.getElementById('skScoreAdv').textContent = '0';
+        skSave();
+
+        if (matchDbId) {
+            sb.from('points').delete().eq('match_id', matchDbId).eq('set_num', sk.currentSet).then(function() {});
+            skSync();
+        }
+    }
+
+    // ==========================================
+    // REALTIME
+    // ==========================================
     sb.channel('matchs-realtime')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'matchs' }, function() { loadMatchs(); })
         .subscribe();
 
-    loadAdversaires().then(function() { loadMatchs(); });
+    // ==========================================
+    // INIT
+    // ==========================================
+    // Show scorekeeper if URL has ?score param
+    var urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('score')) {
+        document.getElementById('scorekeeper').classList.add('show');
+    }
+
+    loadAdversaires().then(function() {
+        loadMatchs();
+        skLoad();
+    });
 </script>
 
 </body>
