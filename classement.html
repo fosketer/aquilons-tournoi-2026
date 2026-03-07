@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classement - Aquilons Tournoi CVS 2026</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --blue: #1A56B8;
+            --blue-light: #3A76D8;
+            --blue-dark: #0E3A80;
+            --silver: #A8A9AD;
+            --silver-light: #C8C9CD;
+            --silver-dark: #78797D;
+            --bg: #0C1220;
+            --bg-light: #121C30;
+            --bg-card: #101828;
+            --gray: #8090A8;
+            --white: #EDF0F5;
+            --win: #4CAF50;
+            --loss: #E53935;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--white);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        .header {
+            background: linear-gradient(135deg, var(--bg) 0%, var(--bg-light) 50%, var(--bg) 100%);
+            border-bottom: 3px solid var(--blue);
+            padding: 1.5rem 1rem 1rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(ellipse at center, rgba(26,86,184,0.08) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .header-logo { width: 80px; height: auto; margin-bottom: 0.3rem; filter: drop-shadow(0 0 15px rgba(26,86,184,0.4)); }
+
+        .team-name {
+            font-family: 'Oswald', sans-serif; font-size: 2rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.15em;
+            background: linear-gradient(180deg, var(--silver-light) 0%, var(--silver) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+
+        .team-sub {
+            font-family: 'Oswald', sans-serif; font-size: 0.85rem;
+            color: var(--blue-light); letter-spacing: 0.3em; text-transform: uppercase; margin-top: 0.1rem;
+        }
+
+        /* NAV */
+        .nav {
+            display: flex; justify-content: center;
+            background: var(--bg-light); border-bottom: 1px solid rgba(26,86,184,0.2);
+        }
+
+        .nav a {
+            flex: 1; max-width: 200px; text-align: center; padding: 0.8rem 1rem;
+            font-family: 'Oswald', sans-serif; font-size: 0.85rem;
+            text-transform: uppercase; letter-spacing: 0.15em; text-decoration: none;
+            color: var(--silver-dark); border-bottom: 2px solid transparent; transition: all 0.3s;
+        }
+
+        .nav a:hover { color: var(--silver-light); }
+        .nav a.active { color: var(--blue-light); border-bottom-color: var(--blue); }
+
+        /* DIVISION TABS */
+        .div-tabs {
+            display: flex; justify-content: center; gap: 0.5rem;
+            padding: 1rem; max-width: 600px; margin: 0 auto;
+        }
+
+        .div-tab {
+            font-family: 'Oswald', sans-serif; font-size: 0.8rem;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            padding: 0.5rem 1.2rem; border-radius: 8px;
+            border: 1px solid rgba(26,86,184,0.2); background: var(--bg-card);
+            color: var(--gray); cursor: pointer; transition: all 0.2s;
+        }
+
+        .div-tab:hover { color: var(--white); border-color: rgba(26,86,184,0.4); }
+        .div-tab.active { background: var(--blue); color: var(--white); border-color: var(--blue); }
+
+        /* CONTENT */
+        .content { max-width: 600px; margin: 0 auto; padding: 0 1rem 2rem; }
+
+        .div-section { display: none; }
+        .div-section.show { display: block; }
+
+        /* POOL */
+        .pool-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(26,86,184,0.15);
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .pool-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.6rem 1rem;
+            background: rgba(26,86,184,0.08);
+            border-bottom: 1px solid rgba(26,86,184,0.15);
+        }
+
+        .pool-name {
+            font-family: 'Oswald', sans-serif; font-size: 0.9rem;
+            text-transform: uppercase; letter-spacing: 0.12em; color: var(--blue-light);
+        }
+
+        .pool-status {
+            font-size: 0.6rem; color: var(--gray);
+            text-transform: uppercase; letter-spacing: 0.1em;
+        }
+
+        .pool-table {
+            width: 100%; border-collapse: collapse;
+        }
+
+        .pool-table th {
+            font-family: 'Oswald', sans-serif; font-size: 0.6rem;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            color: var(--gray); padding: 0.4rem 0.5rem;
+            text-align: center; border-bottom: 1px solid rgba(26,86,184,0.1);
+        }
+
+        .pool-table th:first-child { text-align: left; padding-left: 1rem; }
+        .pool-table th.rg { color: var(--blue-light); }
+
+        .pool-table td {
+            font-size: 0.8rem; padding: 0.5rem 0.5rem;
+            text-align: center; border-bottom: 1px solid rgba(26,86,184,0.06);
+        }
+
+        .pool-table td:first-child {
+            text-align: left; padding-left: 1rem; font-weight: 500;
+        }
+
+        .pool-table tr:last-child td { border-bottom: none; }
+
+        .pool-table tr.highlight {
+            background: rgba(26,86,184,0.06);
+        }
+
+        .pool-table tr.highlight td:first-child {
+            color: var(--blue-light); font-weight: 600;
+        }
+
+        .pool-table .rg-cell {
+            font-family: 'Oswald', sans-serif; font-size: 0.9rem;
+            font-weight: 700; color: var(--blue-light);
+        }
+
+        .pool-table .ratio { font-size: 0.7rem; color: var(--gray); }
+        .pool-table .no-data { color: var(--silver-dark); font-size: 0.7rem; }
+
+        .section-title {
+            font-family: 'Oswald', sans-serif; font-size: 0.85rem;
+            text-transform: uppercase; letter-spacing: 0.25em;
+            color: var(--blue-light); text-align: center;
+            margin: 1.5rem 0 1rem;
+            display: flex; align-items: center; gap: 1rem;
+        }
+
+        .section-title::before, .section-title::after {
+            content: ''; flex: 1; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(26,86,184,0.35), transparent);
+        }
+
+        /* BRACKET */
+        .bracket-link {
+            display: block; text-align: center;
+            padding: 0.8rem; margin-top: 0.5rem;
+            background: var(--bg-card);
+            border: 1px solid rgba(26,86,184,0.15);
+            border-radius: 10px;
+            color: var(--blue-light);
+            text-decoration: none;
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.2s;
+        }
+
+        .bracket-link:hover {
+            background: rgba(26,86,184,0.1);
+            border-color: rgba(26,86,184,0.4);
+        }
+
+        .refresh-btn {
+            display: block; margin: 1rem auto; padding: 0.5rem 1.5rem;
+            font-family: 'Oswald', sans-serif; font-size: 0.7rem;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            border-radius: 8px; border: 1px solid rgba(26,86,184,0.2);
+            background: var(--bg-card); color: var(--gray);
+            cursor: pointer; transition: all 0.2s;
+        }
+
+        .refresh-btn:hover { color: var(--white); border-color: rgba(26,86,184,0.4); }
+
+        .last-refresh {
+            text-align: center; font-size: 0.6rem; color: var(--gray);
+            margin-top: 0.3rem;
+        }
+
+        .footer {
+            text-align: center; padding: 2rem 1rem; font-size: 0.7rem;
+            color: rgba(128,144,168,0.4);
+            border-top: 1px solid rgba(26,86,184,0.1); margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <img src="logo.jpg" alt="Aquilons" class="header-logo">
+        <div class="team-name">Aquilons</div>
+        <div class="team-sub">Classement du tournoi</div>
+    </div>
+
+    <div class="nav">
+        <a href="index.html">R&eacute;sultats</a>
+        <a href="classement.html" class="active">Classement</a>
+        <a href="horaire.html">Horaire</a>
+    </div>
+
+    <div class="div-tabs">
+        <button class="div-tab active" onclick="showDiv('d2')">Division 2</button>
+        <button class="div-tab" onclick="showDiv('d1')">Division 1</button>
+    </div>
+
+    <div class="content">
+        <button class="refresh-btn" onclick="fetchAll()">Rafra&icirc;chir les donn&eacute;es</button>
+        <div class="last-refresh" id="lastRefresh"></div>
+
+        <!-- D2 -->
+        <div class="div-section show" id="divD2">
+            <div class="section-title">Pools &mdash; Division 2</div>
+            <div id="poolsD2"></div>
+            <div class="section-title">&Eacute;liminatoires</div>
+            <a class="bracket-link" href="https://docs.google.com/spreadsheets/d/1TGb1tBMg2CB9lGfWd3uqxHAcxBW81zw4gSfdKCWH7A0/htmlview#gid=258735679" target="_blank">Voir le tableau &eacute;liminatoire Tier 1</a>
+            <a class="bracket-link" href="https://docs.google.com/spreadsheets/d/1TGb1tBMg2CB9lGfWd3uqxHAcxBW81zw4gSfdKCWH7A0/htmlview#gid=1190283882" target="_blank" style="margin-top:0.5rem">Voir le tableau &eacute;liminatoire Tier 2</a>
+        </div>
+
+        <!-- D1 -->
+        <div class="div-section" id="divD1">
+            <div class="section-title">Pools &mdash; Division 1</div>
+            <div id="poolsD1"></div>
+            <div class="section-title">&Eacute;liminatoires</div>
+            <a class="bracket-link" href="https://docs.google.com/spreadsheets/d/1TGb1tBMg2CB9lGfWd3uqxHAcxBW81zw4gSfdKCWH7A0/htmlview#gid=1911589812" target="_blank">Voir le tableau &eacute;liminatoire D1</a>
+        </div>
+    </div>
+
+    <div class="footer">
+        Aquilons &middot; Jean de Br&eacute;beuf &middot; Tournoi CVS 2026<br>
+        Donn&eacute;es : <a href="https://docs.google.com/spreadsheets/d/1TGb1tBMg2CB9lGfWd3uqxHAcxBW81zw4gSfdKCWH7A0/htmlview" target="_blank" style="color:var(--gray)">Google Sheets officiel</a>
+    </div>
+
+<script>
+    var SHEET_ID = '1TGb1tBMg2CB9lGfWd3uqxHAcxBW81zw4gSfdKCWH7A0';
+    var GID_D2 = '927908034';
+    var GID_D1 = '290611892';
+    var AQUILON_NAME = 'Aquilon (QC)';
+
+    // Pool definitions (from the spreadsheet structure)
+    var POOLS_D2 = [
+        { name: 'Pool E', ids: [41,42,43,44], teams: ['Express U14 (MAU)', 'Aquilon (QC)', 'CVS U13 Jaune (SAG)', 'Husky JDN (C-N)'] },
+        { name: 'Pool F', ids: [51,52,53,54], teams: ['Patriotes (QC)', 'Husky JPG (C-N)', 'ESSOR U13 Noir (QC)', 'Macareux (C-N)'] },
+        { name: 'Pool G', ids: [61,62,63,64], teams: ['Phoenix Or (LAN)', 'SELECT 4 (EDQ)', 'Husky JSP (C-N)', 'Ath\u00e9ltiques (QC)'] },
+        { name: 'Pool H', ids: [71,72,73,74], teams: ['SELECT 3 (EDQ)', 'CVS U13 Bleu (SAG)', 'Noir et Or (C-N)', 'Husky PG (C-N)'] },
+        { name: 'Pool I', ids: [81,82,83,84], teams: ['CVS U13 Blanc (SAG)', 'Impulsives (CHAR)', 'Montagnards 2 (QC)', 'Patriotes 2 (QC)'] }
+    ];
+
+    var POOLS_D1 = [
+        { name: 'Pool C', ids: [21,22,23,24], teams: ['Hirondelles U14 (SAG)', 'Husky MED (C-N)', 'Extr\u00eame U13 (N-B)', 'Montagnards (QC)'] },
+        { name: 'Pool D', ids: [31,32,33,34], teams: ['CVS U14 (SAG)', 'Les Chevaliers (QC)', 'Hirondelles U13 (SAG)', 'Phoenix de l\'Est (EDQ)'] }
+    ];
+
+    // Parsed data cache
+    var dataD2 = {};
+    var dataD1 = {};
+
+    function showDiv(div) {
+        document.querySelectorAll('.div-tab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.div-section').forEach(function(s) { s.classList.remove('show'); });
+        if (div === 'd2') {
+            document.querySelectorAll('.div-tab')[0].classList.add('active');
+            document.getElementById('divD2').classList.add('show');
+        } else {
+            document.querySelectorAll('.div-tab')[1].classList.add('active');
+            document.getElementById('divD1').classList.add('show');
+        }
+    }
+
+    function csvUrl(gid) {
+        return 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + gid;
+    }
+
+    function parseCSV(text) {
+        var lines = [];
+        var current = '';
+        var inQuote = false;
+        for (var i = 0; i < text.length; i++) {
+            var c = text[i];
+            if (c === '"') { inQuote = !inQuote; continue; }
+            if (c === '\n' && !inQuote) { lines.push(current.split(',')); current = ''; continue; }
+            if (c === '\r') continue;
+            current += c;
+        }
+        if (current) lines.push(current.split(','));
+        return lines;
+    }
+
+    function parsePoolData(rows, pools) {
+        var data = {};
+        // Each pool block: header row with team IDs + column names, then 4 team rows
+        // We look for rows that contain team IDs matching pool definitions
+        pools.forEach(function(pool) {
+            data[pool.name] = [];
+            pool.teams.forEach(function(team, idx) {
+                var teamId = pool.ids[idx];
+                // Find the row for this team
+                for (var r = 0; r < rows.length; r++) {
+                    var row = rows[r];
+                    // Team row: col[1] = teamId, col[2] = team name
+                    if (row[1] && row[1].trim() === String(teamId)) {
+                        // Find the stats - they're in the columns after the match results
+                        // Structure: ..., SG, SP, PP, PC, SG/SP, PP/PC, RG
+                        // For D2: cols 16-22 (0-indexed)
+                        var entry = {
+                            id: teamId,
+                            name: team,
+                            sg: null, sp: null, pp: null, pc: null,
+                            sgsp: null, pppc: null, rg: null
+                        };
+
+                        // Look for numeric values in the latter part of the row
+                        // The header row above this pool has column positions
+                        // Find header row (row with SG, SP, PP, PC labels)
+                        var headerRow = null;
+                        for (var h = r - 1; h >= Math.max(0, r - 5); h--) {
+                            if (rows[h]) {
+                                var joined = rows[h].join(',');
+                                if (joined.indexOf('SG') >= 0 && joined.indexOf('SP') >= 0) {
+                                    headerRow = rows[h];
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (headerRow) {
+                            // Find column indices for SG, SP, PP, PC, SG/SP, PP/PC, RG
+                            var sgCol = -1, spCol = -1, ppCol = -1, pcCol = -1;
+                            var sgspCol = -1, pppcCol = -1, rgCol = -1;
+                            for (var c = 0; c < headerRow.length; c++) {
+                                var val = headerRow[c].trim();
+                                if (val === 'SG' && sgCol === -1) sgCol = c;
+                                else if (val === 'SP' && spCol === -1) spCol = c;
+                                else if (val === 'PP' && ppCol === -1) ppCol = c;
+                                else if (val === 'PC' && pcCol === -1) pcCol = c;
+                                else if (val === 'SG/SP') sgspCol = c;
+                                else if (val === 'PP/PC') pppcCol = c;
+                                else if (val === 'RG') rgCol = c;
+                            }
+
+                            if (sgCol >= 0 && row[sgCol]) entry.sg = row[sgCol].trim() || null;
+                            if (spCol >= 0 && row[spCol]) entry.sp = row[spCol].trim() || null;
+                            if (ppCol >= 0 && row[ppCol]) entry.pp = row[ppCol].trim() || null;
+                            if (pcCol >= 0 && row[pcCol]) entry.pc = row[pcCol].trim() || null;
+                            if (sgspCol >= 0 && row[sgspCol]) entry.sgsp = row[sgspCol].trim() || null;
+                            if (pppcCol >= 0 && row[pppcCol]) entry.pppc = row[pppcCol].trim() || null;
+                            if (rgCol >= 0 && row[rgCol]) entry.rg = row[rgCol].trim() || null;
+                        }
+
+                        data[pool.name].push(entry);
+                        break;
+                    }
+                }
+                // If team not found in CSV, add with no data
+                if (!data[pool.name].find(function(e) { return e.name === team; })) {
+                    data[pool.name].push({ id: teamId, name: team, sg:null, sp:null, pp:null, pc:null, sgsp:null, pppc:null, rg:null });
+                }
+            });
+
+            // Sort by rank if available
+            data[pool.name].sort(function(a, b) {
+                if (a.rg && b.rg) return parseInt(a.rg) - parseInt(b.rg);
+                if (a.rg) return -1;
+                if (b.rg) return 1;
+                return 0;
+            });
+        });
+        return data;
+    }
+
+    function renderPools(pools, data, containerId) {
+        var container = document.getElementById(containerId);
+        container.innerHTML = pools.map(function(pool) {
+            var teams = data[pool.name] || pool.teams.map(function(t, i) {
+                return { id: pool.ids[i], name: t, sg:null, sp:null, pp:null, pc:null, sgsp:null, pppc:null, rg:null };
+            });
+
+            var hasData = teams.some(function(t) { return t.sg !== null; });
+            var status = hasData ? 'Donn\u00e9es disponibles' : 'En attente';
+
+            var rows = teams.map(function(t) {
+                var isAq = t.name === AQUILON_NAME;
+                var cls = isAq ? ' class="highlight"' : '';
+                if (!hasData) {
+                    return '<tr' + cls + '>' +
+                        '<td>' + t.name + '</td>' +
+                        '<td class="no-data" colspan="5">\u2014</td>' +
+                        '</tr>';
+                }
+                return '<tr' + cls + '>' +
+                    '<td>' + t.name + '</td>' +
+                    '<td>' + (t.sg || '-') + '</td>' +
+                    '<td>' + (t.sp || '-') + '</td>' +
+                    '<td>' + (t.pp || '-') + '</td>' +
+                    '<td>' + (t.pc || '-') + '</td>' +
+                    '<td class="ratio">' + (t.pppc || '-') + '</td>' +
+                    '<td class="rg-cell">' + (t.rg || '-') + '</td>' +
+                    '</tr>';
+            }).join('');
+
+            var thExtra = hasData ?
+                '<th>SG</th><th>SP</th><th>PP</th><th>PC</th><th>PP/PC</th><th class="rg">Rg</th>' :
+                '<th colspan="5"></th>';
+
+            return '<div class="pool-card">' +
+                '<div class="pool-header">' +
+                    '<span class="pool-name">' + pool.name + '</span>' +
+                    '<span class="pool-status">' + status + '</span>' +
+                '</div>' +
+                '<table class="pool-table">' +
+                    '<thead><tr><th>\u00c9quipe</th>' + thExtra + '</tr></thead>' +
+                    '<tbody>' + rows + '</tbody>' +
+                '</table>' +
+            '</div>';
+        }).join('');
+    }
+
+    async function fetchSheet(gid) {
+        try {
+            var res = await fetch(csvUrl(gid));
+            var text = await res.text();
+            return parseCSV(text);
+        } catch(e) {
+            console.error('Fetch error for gid ' + gid, e);
+            return null;
+        }
+    }
+
+    async function fetchAll() {
+        document.getElementById('lastRefresh').textContent = 'Chargement...';
+
+        var d2Rows = await fetchSheet(GID_D2);
+        var d1Rows = await fetchSheet(GID_D1);
+
+        if (d2Rows) {
+            dataD2 = parsePoolData(d2Rows, POOLS_D2);
+            renderPools(POOLS_D2, dataD2, 'poolsD2');
+        } else {
+            renderPools(POOLS_D2, {}, 'poolsD2');
+        }
+
+        if (d1Rows) {
+            dataD1 = parsePoolData(d1Rows, POOLS_D1);
+            renderPools(POOLS_D1, dataD1, 'poolsD1');
+        } else {
+            renderPools(POOLS_D1, {}, 'poolsD1');
+        }
+
+        var now = new Date();
+        document.getElementById('lastRefresh').textContent =
+            'Derni\u00e8re mise \u00e0 jour : ' + now.getHours() + 'h' + String(now.getMinutes()).padStart(2, '0');
+    }
+
+    // Initial render with pool names (no data yet)
+    renderPools(POOLS_D2, {}, 'poolsD2');
+    renderPools(POOLS_D1, {}, 'poolsD1');
+
+    // Fetch data
+    fetchAll();
+
+    // Auto-refresh every 2 minutes
+    setInterval(fetchAll, 120000);
+</script>
+
+</body>
+</html>
