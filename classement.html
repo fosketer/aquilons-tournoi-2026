@@ -81,28 +81,8 @@
         .nav a:hover { color: var(--silver-light); }
         .nav a.active { color: var(--blue-light); border-bottom-color: var(--blue); }
 
-        /* DIVISION TABS */
-        .div-tabs {
-            display: flex; justify-content: center; gap: 0.5rem;
-            padding: 1rem; max-width: 600px; margin: 0 auto;
-        }
-
-        .div-tab {
-            font-family: 'Oswald', sans-serif; font-size: 0.8rem;
-            text-transform: uppercase; letter-spacing: 0.1em;
-            padding: 0.5rem 1.2rem; border-radius: 8px;
-            border: 1px solid rgba(26,86,184,0.2); background: var(--bg-card);
-            color: var(--gray); cursor: pointer; transition: all 0.2s;
-        }
-
-        .div-tab:hover { color: var(--white); border-color: rgba(26,86,184,0.4); }
-        .div-tab.active { background: var(--blue); color: var(--white); border-color: var(--blue); }
-
         /* CONTENT */
         .content { max-width: 600px; margin: 0 auto; padding: 0 1rem 2rem; }
-
-        .div-section { display: none; }
-        .div-section.show { display: block; }
 
         /* POOL */
         .pool-card {
@@ -242,31 +222,15 @@
         <a href="stats.html">Stats</a>
     </div>
 
-    <div class="div-tabs">
-        <button class="div-tab active" onclick="showDiv('d2')">Division 2</button>
-        <button class="div-tab" onclick="showDiv('d1')">Division 1</button>
-    </div>
-
     <div class="content">
         <button class="refresh-btn" onclick="fetchAll()">Rafra&icirc;chir les donn&eacute;es</button>
         <div class="last-refresh" id="lastRefresh"></div>
 
-        <!-- D2 -->
-        <div class="div-section show" id="divD2">
-            <div class="section-title">Pools &mdash; Division 2</div>
-            <div id="poolsD2"></div>
-            <div class="section-title">&Eacute;liminatoires</div>
-            <a class="bracket-link" href="https://docs.google.com/spreadsheets/d/1TGb1tBMg2CB9lGfWd3uqxHAcxBW81zw4gSfdKCWH7A0/htmlview#gid=258735679" target="_blank">Voir le tableau &eacute;liminatoire Tier 1</a>
-            <a class="bracket-link" href="https://docs.google.com/spreadsheets/d/1TGb1tBMg2CB9lGfWd3uqxHAcxBW81zw4gSfdKCWH7A0/htmlview#gid=1190283882" target="_blank" style="margin-top:0.5rem">Voir le tableau &eacute;liminatoire Tier 2</a>
-        </div>
-
-        <!-- D1 -->
-        <div class="div-section" id="divD1">
-            <div class="section-title">Pools &mdash; Division 1</div>
-            <div id="poolsD1"></div>
-            <div class="section-title">&Eacute;liminatoires</div>
-            <a class="bracket-link" href="https://docs.google.com/spreadsheets/d/1TGb1tBMg2CB9lGfWd3uqxHAcxBW81zw4gSfdKCWH7A0/htmlview#gid=1911589812" target="_blank">Voir le tableau &eacute;liminatoire D1</a>
-        </div>
+        <div class="section-title">Pools &mdash; Benjamin BF D2</div>
+        <div id="poolsD2"></div>
+        <div class="section-title">&Eacute;liminatoires</div>
+        <a class="bracket-link" href="https://docs.google.com/spreadsheets/d/1TGb1tBMg2CB9lGfWd3uqxHAcxBW81zw4gSfdKCWH7A0/htmlview#gid=258735679" target="_blank">Voir le tableau &eacute;liminatoire Tier 1</a>
+        <a class="bracket-link" href="https://docs.google.com/spreadsheets/d/1TGb1tBMg2CB9lGfWd3uqxHAcxBW81zw4gSfdKCWH7A0/htmlview#gid=1190283882" target="_blank" style="margin-top:0.5rem">Voir le tableau &eacute;liminatoire Tier 2</a>
     </div>
 
     <div class="footer">
@@ -277,7 +241,6 @@
 <script>
     var SHEET_ID = '1TGb1tBMg2CB9lGfWd3uqxHAcxBW81zw4gSfdKCWH7A0';
     var GID_D2 = '927908034';
-    var GID_D1 = '290611892';
     var AQUILON_NAME = 'Aquilon (QC)';
 
     // Pool definitions (from the spreadsheet structure)
@@ -289,26 +252,8 @@
         { name: 'Pool I', ids: [81,82,83,84], teams: ['CVS U13 Blanc (SAG)', 'Impulsives (CHAR)', 'Montagnards 2 (QC)', 'Patriotes 2 (QC)'] }
     ];
 
-    var POOLS_D1 = [
-        { name: 'Pool C', ids: [21,22,23,24], teams: ['Hirondelles U14 (SAG)', 'Husky MED (C-N)', 'Extr\u00eame U13 (N-B)', 'Montagnards (QC)'] },
-        { name: 'Pool D', ids: [31,32,33,34], teams: ['CVS U14 (SAG)', 'Les Chevaliers (QC)', 'Hirondelles U13 (SAG)', 'Phoenix de l\'Est (EDQ)'] }
-    ];
-
     // Parsed data cache
     var dataD2 = {};
-    var dataD1 = {};
-
-    function showDiv(div) {
-        document.querySelectorAll('.div-tab').forEach(function(t) { t.classList.remove('active'); });
-        document.querySelectorAll('.div-section').forEach(function(s) { s.classList.remove('show'); });
-        if (div === 'd2') {
-            document.querySelectorAll('.div-tab')[0].classList.add('active');
-            document.getElementById('divD2').classList.add('show');
-        } else {
-            document.querySelectorAll('.div-tab')[1].classList.add('active');
-            document.getElementById('divD1').classList.add('show');
-        }
-    }
 
     function csvUrl(gid) {
         return 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + gid;
@@ -473,20 +418,12 @@
         document.getElementById('lastRefresh').textContent = 'Chargement...';
 
         var d2Rows = await fetchSheet(GID_D2);
-        var d1Rows = await fetchSheet(GID_D1);
 
         if (d2Rows) {
             dataD2 = parsePoolData(d2Rows, POOLS_D2);
             renderPools(POOLS_D2, dataD2, 'poolsD2');
         } else {
             renderPools(POOLS_D2, {}, 'poolsD2');
-        }
-
-        if (d1Rows) {
-            dataD1 = parsePoolData(d1Rows, POOLS_D1);
-            renderPools(POOLS_D1, dataD1, 'poolsD1');
-        } else {
-            renderPools(POOLS_D1, {}, 'poolsD1');
         }
 
         var now = new Date();
@@ -496,7 +433,6 @@
 
     // Initial render with pool names (no data yet)
     renderPools(POOLS_D2, {}, 'poolsD2');
-    renderPools(POOLS_D1, {}, 'poolsD1');
 
     // Fetch data
     fetchAll();
