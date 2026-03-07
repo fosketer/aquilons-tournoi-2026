@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stats saison - Aquilons Tournoi CVS 2026</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --blue: #1A56B8;
+            --blue-light: #3A76D8;
+            --blue-dark: #0E3A80;
+            --silver: #A8A9AD;
+            --silver-light: #C8C9CD;
+            --silver-dark: #78797D;
+            --bg: #0C1220;
+            --bg-light: #121C30;
+            --bg-card: #101828;
+            --gray: #8090A8;
+            --white: #EDF0F5;
+            --win: #4CAF50;
+            --loss: #E53935;
+            --gold: #FFD700;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--white);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--bg) 0%, var(--bg-light) 50%, var(--bg) 100%);
+            border-bottom: 3px solid var(--blue);
+            padding: 1.5rem 1rem 1rem;
+            text-align: center;
+            position: relative; overflow: hidden;
+        }
+        .header::before {
+            content: ''; position: absolute; top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(ellipse at center, rgba(26,86,184,0.08) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .header-logo { width: 80px; height: auto; margin-bottom: 0.3rem; filter: drop-shadow(0 0 15px rgba(26,86,184,0.4)); }
+        .team-name {
+            font-family: 'Oswald', sans-serif; font-size: 2rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.15em;
+            background: linear-gradient(180deg, var(--silver-light) 0%, var(--silver) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .team-sub {
+            font-family: 'Oswald', sans-serif; font-size: 0.85rem;
+            color: var(--blue-light); letter-spacing: 0.3em; text-transform: uppercase; margin-top: 0.1rem;
+        }
+
+        .nav {
+            display: flex; justify-content: center;
+            background: var(--bg-light); border-bottom: 1px solid rgba(26,86,184,0.2);
+        }
+        .nav a {
+            flex: 1; max-width: 200px; text-align: center; padding: 0.8rem 1rem;
+            font-family: 'Oswald', sans-serif; font-size: 0.85rem;
+            text-transform: uppercase; letter-spacing: 0.15em; text-decoration: none;
+            color: var(--silver-dark); border-bottom: 2px solid transparent; transition: all 0.3s;
+        }
+        .nav a:hover { color: var(--silver-light); }
+        .nav a.active { color: var(--blue-light); border-bottom-color: var(--blue); }
+
+        .content { max-width: 700px; margin: 0 auto; padding: 1rem 1rem 3rem; }
+
+        .section-title {
+            font-family: 'Oswald', sans-serif; font-size: 1.1rem;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--blue-light); margin: 1.5rem 0 0.7rem;
+            padding-bottom: 0.3rem;
+            border-bottom: 1px solid rgba(26,86,184,0.2);
+        }
+        .section-title:first-child { margin-top: 0.5rem; }
+
+        .section-sub {
+            font-size: 0.7rem; color: var(--gray); font-weight: 400;
+            letter-spacing: 0.05em; text-transform: none;
+        }
+
+        /* TOURNAMENT TEAMS TABLE */
+        .tourney-table {
+            width: 100%; border-collapse: collapse; margin-bottom: 0.5rem;
+        }
+        .tourney-table th {
+            font-family: 'Oswald', sans-serif; font-size: 0.65rem;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            color: var(--gray); padding: 0.4rem 0.5rem;
+            text-align: left; border-bottom: 1px solid rgba(26,86,184,0.15);
+        }
+        .tourney-table th.num { text-align: center; width: 2rem; }
+        .tourney-table th.stat { text-align: center; }
+        .tourney-table td {
+            font-size: 0.75rem; padding: 0.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            vertical-align: middle;
+        }
+        .tourney-table td.num { text-align: center; color: var(--gray); }
+        .tourney-table td.stat { text-align: center; }
+        .tourney-table tr.is-aquilon td { background: rgba(26,86,184,0.08); }
+        .tourney-table tr.is-aquilon td:first-child { border-left: 3px solid var(--blue); }
+
+        .team-cell-name { font-weight: 600; }
+        .team-cell-school { font-size: 0.6rem; color: var(--silver-dark); font-style: italic; display: block; margin-top: 0.1rem; }
+        .team-cell-region { font-size: 0.6rem; color: var(--gray); }
+        .team-cell-rank { font-weight: 600; color: var(--silver-light); }
+        .rank-1 { color: var(--gold); }
+
+        .stat-good { color: var(--win); font-weight: 600; }
+        .stat-bad { color: var(--loss); font-weight: 600; }
+        .stat-na { color: var(--silver-dark); font-size: 0.65rem; }
+
+        /* REGIONAL TABLES */
+        .region-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(26,86,184,0.15);
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        .region-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.6rem 1rem;
+            background: rgba(26,86,184,0.08);
+            border-bottom: 1px solid rgba(26,86,184,0.15);
+        }
+        .region-name {
+            font-family: 'Oswald', sans-serif; font-size: 0.85rem;
+            text-transform: uppercase; letter-spacing: 0.1em; color: var(--blue-light);
+        }
+        .region-info { font-size: 0.6rem; color: var(--gray); }
+
+        .region-table {
+            width: 100%; border-collapse: collapse;
+        }
+        .region-table th {
+            font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--gray); padding: 0.3rem 0.4rem;
+            text-align: center; border-bottom: 1px solid rgba(26,86,184,0.1);
+            font-family: 'Oswald', sans-serif;
+        }
+        .region-table th:first-child { text-align: center; width: 1.8rem; }
+        .region-table th:nth-child(2) { text-align: left; }
+        .region-table td {
+            font-size: 0.7rem; padding: 0.35rem 0.4rem;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            text-align: center;
+        }
+        .region-table td:nth-child(2) { text-align: left; font-weight: 500; }
+        .region-table tr.highlight td { background: rgba(26,86,184,0.1); }
+        .region-table tr.highlight td:first-child { border-left: 3px solid var(--blue); }
+
+        .no-data {
+            padding: 1rem; text-align: center;
+            font-size: 0.75rem; color: var(--gray); font-style: italic;
+        }
+
+        /* Region tabs */
+        .region-tabs {
+            display: flex; flex-wrap: wrap; gap: 0.4rem;
+            padding: 0.5rem 0; margin-bottom: 0.5rem;
+        }
+        .region-tab {
+            font-family: 'Oswald', sans-serif; font-size: 0.7rem;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            padding: 0.4rem 0.8rem; border-radius: 6px;
+            border: 1px solid rgba(26,86,184,0.2); background: var(--bg-card);
+            color: var(--gray); cursor: pointer; transition: all 0.2s;
+        }
+        .region-tab:hover { color: var(--white); border-color: rgba(26,86,184,0.4); }
+        .region-tab.active { background: var(--blue); color: var(--white); border-color: var(--blue); }
+
+        .region-section { display: none; }
+        .region-section.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="https://i.imgur.com/LE0gq4e.png" alt="Aquilons" class="header-logo">
+        <div class="team-name">Aquilons</div>
+        <div class="team-sub">Stats de saison</div>
+    </div>
+
+    <div class="nav">
+        <a href="index.html">R&eacute;sultats</a>
+        <a href="classement.html">Classement</a>
+        <a href="stats.html" class="active">Stats</a>
+    </div>
+
+    <div class="content">
+        <div class="section-title">
+            &Eacute;quipes du tournoi CVS
+            <span class="section-sub">Saison RSEQ 2025-2026</span>
+        </div>
+
+        <div style="overflow-x:auto;">
+        <table class="tourney-table" id="tourneyTable">
+            <thead>
+                <tr>
+                    <th class="num">#</th>
+                    <th>&Eacute;quipe</th>
+                    <th>R&eacute;gion</th>
+                    <th class="stat">Rang</th>
+                    <th class="stat">SG</th>
+                    <th class="stat">SP</th>
+                    <th class="stat">PP</th>
+                    <th class="stat">PC</th>
+                </tr>
+            </thead>
+            <tbody id="tourneyBody"></tbody>
+        </table>
+        </div>
+
+        <div class="section-title" style="margin-top:2rem;">
+            Classements r&eacute;gionaux
+            <span class="section-sub">Toutes les &eacute;quipes par r&eacute;gion</span>
+        </div>
+
+        <div class="region-tabs" id="regionTabs"></div>
+        <div id="regionSections"></div>
+    </div>
+
+    <script>
+    // ==========================================
+    // TOURNAMENT TEAMS (from Supabase)
+    // ==========================================
+    var SUPABASE_URL = 'https://lmbjnbnnaogpoefiywgq.supabase.co';
+    var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtYmpuYm5uYW9ncG9lZml5d2dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEzMTAyNDEsImV4cCI6MjA1Njg4NjI0MX0.KlJHjKLsLpMHb3MjfC2xzVqMwvaFjYhbKVjR2mUXGQA';
+    var TOURNOI_ID = 'a0000000-0000-0000-0000-000000000001';
+    var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function loadTourneyTeams() {
+        var res = await sb.from('adversaires').select('*').eq('tournoi_id', TOURNOI_ID).order('nom_tournoi');
+        if (!res.data) return;
+        var body = document.getElementById('tourneyBody');
+        var i = 0;
+        body.innerHTML = res.data.filter(function(a) { return a.nom_tournoi !== 'Aquilons'; }).map(function(a) {
+            i++;
+            var isAq = false;
+            var rankCls = a.rang_regional === 1 ? 'rank-1' : '';
+            var rankTxt = a.rang_regional ? a.rang_regional + (a.rang_regional === 1 ? 'er' : 'e') : '<span class="stat-na">-</span>';
+            var sg = a.sets_gagnes != null ? a.sets_gagnes : '<span class="stat-na">-</span>';
+            var sp = a.sets_perdus != null ? a.sets_perdus : '<span class="stat-na">-</span>';
+            var pp = a.points_pour != null ? a.points_pour : '<span class="stat-na">-</span>';
+            var pc = a.points_contre != null ? a.points_contre : '<span class="stat-na">-</span>';
+            var school = a.nom_officiel || a.ecole || '';
+            return '<tr' + (isAq ? ' class="is-aquilon"' : '') + '>' +
+                '<td class="num">' + i + '</td>' +
+                '<td><span class="team-cell-name">' + a.nom_tournoi + '</span>' +
+                    (school ? '<span class="team-cell-school">' + school + '</span>' : '') +
+                '</td>' +
+                '<td class="team-cell-region">' + (a.region_rseq || '<span class="stat-na">-</span>') + '</td>' +
+                '<td class="stat ' + rankCls + '">' + rankTxt + '</td>' +
+                '<td class="stat">' + sg + '</td>' +
+                '<td class="stat">' + sp + '</td>' +
+                '<td class="stat">' + pp + '</td>' +
+                '<td class="stat">' + pc + '</td>' +
+                '</tr>';
+        }).join('');
+    }
+
+    // ==========================================
+    // REGIONAL STANDINGS (hardcoded from PDFs/sheets)
+    // ==========================================
+    var regions = [
+        {
+            id: 'qca',
+            name: 'QCA (Qu\u00e9bec-Chaudi\u00e8re-Appalaches)',
+            info: 'Benjamin F\u00e9minin D3 \u2014 Section Juv. Notre-Dame',
+            highlight: 'Jean-de-Br\u00e9beuf 1',
+            cols: ['#', '\u00c9quipe', 'MJ', 'SG', 'SP', 'PP', 'PC', 'Rang'],
+            teams: [
+                ['1', 'Juv. Notre-Dame 1', 3, 9, 6, 174, 150, 1],
+                ['2', 'E.S. Veilleux', 3, 8, 5, 169, 162, 2],
+                ['3', 'Jean-de-Br\u00e9beuf 1', 3, 3, 4, 135, 150, 3],
+                ['4', 'Aubier 1', 3, 8, 2, 152, 168, 4]
+            ]
+        },
+        {
+            id: 'estqc',
+            name: 'Est-du-Qu\u00e9bec',
+            info: 'Benjamin F\u00e9minin \u2014 Classement g\u00e9n\u00e9ral apr\u00e8s Tournoi 2',
+            highlight: 'Armand Saint-Onge 1',
+            cols: ['#', '\u00c9quipe', 'MJ', 'SG', 'SP', 'PP', 'PC', 'Pts'],
+            teams: [
+                [1, 'Armand Saint-Onge 1', 8, 15, 1, 397, 336, 46],
+                [2, '\u00c9.S du Littoral 1', 8, 11, 5, 368, 327, 44],
+                [3, 'Sayabec 1', 8, 10, 6, 354, 311, 43],
+                [4, 'Paul-Hubert 1', 8, 10, 6, 362, 292, 43],
+                [5, 'C.E.Pouliot 1', 8, 9, 7, 351, 348, 42],
+                [6, 'P.Pasp\u00e9biac 1', 8, 10, 6, 353, 290, 40],
+                [7, 'Armand Saint-Onge 2', 8, 9, 7, 332, 326, 40],
+                [8, 'Gabriel-Le-Courtois 1', 8, 9, 7, 350, 333, 39],
+                [9, 'Matap\u00e9dia', 8, 11, 5, 369, 322, 45],
+                [10, 'C.E.Pouliot 2', 8, 10, 6, 362, 312, 38],
+                [11, 'MGR S\u00e9vigny 1', 8, 7, 9, 352, 335, 38],
+                [12, 'Chanoine-Beaudet 1', 8, 13, 3, 367, 299, 38],
+                [13, 'Matane 1', 8, 7, 9, 322, 345, 38],
+                [14, 'Antoine-Bernard 1', 8, 6, 10, 355, 361, 38],
+                [15, 'Mistral 1', 8, 5, 11, 284, 363, 36],
+                [16, 'Paul-Hubert 2', 8, 14, 2, 395, 278, 35],
+                [17, 'Paul-Hubert 3', 8, 2, 14, 263, 376, 35],
+                [18, 'C.E.Pouliot 3', 8, 10, 6, 340, 313, 34],
+                [19, 'Antoine-Roy', 8, 9, 7, 318, 357, 33],
+                [20, 'Cabano 1', 8, 10, 6, 387, 282, 33]
+            ]
+        },
+        {
+            id: 'ce',
+            name: 'Cantons-de-l\'Est',
+            info: 'Benjamin F\u00e9minin D3 \u2014 Classement apr\u00e8s 4e tournoi',
+            highlight: null,
+            cols: ['#', '\u00c9quipe', 'MJ', 'SG', 'SP', 'PP', 'PC', 'Rang'],
+            teams: [
+                [1, 'P. Montignac', 12, 24, 0, 600, 315, 1],
+                [2, 'Poly La Samare', 12, 14, 10, 511, 499, 2],
+                [3, '\u00c9.S. Tandem Sonia', 12, 12, 12, 498, 525, 3],
+                [4, 'C. St-Bernard', 13, 10, 16, 542, 542, 4],
+                [5, 'S. de Sherbrooke', 13, 12, 14, 539, 542, 5],
+                [6, 'C. Mont Notre-Dame', 14, 22, 6, 659, 529, 6],
+                [7, 'Sal\u00e9sien', 14, 18, 10, 612, 606, 7],
+                [8, '\u00c9.S. du Triolet', 15, 16, 14, 656, 645, 8],
+                [9, 'P. Louis St-Laurent', 15, 11, 19, 618, 677, 9],
+                [10, '\u00c9.S. La Ruche', 15, 8, 22, 583, 680, 9],
+                [11, 'Le Bois\u00e9', 15, 3, 27, 475, 733, 11]
+            ]
+        },
+        {
+            id: 'cn',
+            name: 'C\u00f4te-Nord',
+            info: 'Cadettes-Benjamines BF \u2014 Classement g\u00e9n\u00e9ral Rencontre 2',
+            highlight: 'JDN/Manikoutai (MED) BF',
+            cols: ['#', '\u00c9quipe'],
+            teams: [
+                [1, 'JDN/Manikoutai (MED) BF'],
+                [2, 'IESI 2 BF'],
+                [3, 'PDB (IFC) BF'],
+                [4, 'P. des Rivi\u00e8res CF'],
+                [5, 'ESSB (CLB) BF'],
+                [6, 'Uashkaikan CF'],
+                [7, 'JDN/Manikoutai (PG) BF'],
+                [8, 'JDN/Manikoutai (AD) BF'],
+                [9, 'Berges (MG) BF'],
+                [10, 'Uashkaikan BF'],
+                [11, 'PDB (GAC) CF'],
+                [12, 'Olamen BF'],
+                [13, 'CELA (ES) BF'],
+                [14, 'ESSB (LRP) BF'],
+                [15, 'PDB (MH) BF'],
+                [16, 'IESI 1 BF'],
+                [17, 'CELA (MNB) BF'],
+                [18, 'Mgr. Labrie (MFD) BF'],
+                [19, 'JDN/Manikoutai (DL) BF'],
+                [20, 'PDB (ML) BF'],
+                [21, 'ESSB (EG) BF']
+            ]
+        },
+        {
+            id: 'sag',
+            name: 'Saguenay-Lac-Saint-Jean',
+            info: 'Benjamin F\u00e9minin \u2014 Classement g\u00e9n\u00e9ral',
+            highlight: null,
+            cols: ['#', '\u00c9quipe', 'Pts'],
+            teams: [
+                [1, 'Odyss\u00e9e 1', 128],
+                [2, 'S\u00e9m. Chicoutimi', 114],
+                [3, '\u00c9. pol. Arvida 2', 110],
+                [4, '\u00c9. pol. Arvida 1', 107],
+                [5, '\u00c9. s. B\u00e2tisseurs', 98],
+                [6, 'Cit\u00e9', 94],
+                [7, '\u00c9. pol. Arvida 4', 79],
+                [7, 'PWD', 79],
+                [9, 'Quatre-Vents', 75],
+                [10, 'Grandes-Rivi\u00e8res', 69],
+                [11, 'Odyss\u00e9e 2', 68],
+                [12, 'PWD 2', null]
+            ]
+        }
+    ];
+
+    function buildRegions() {
+        var tabsEl = document.getElementById('regionTabs');
+        var sectionsEl = document.getElementById('regionSections');
+        var tabsHtml = '';
+        var sectHtml = '';
+
+        regions.forEach(function(r, idx) {
+            tabsHtml += '<div class="region-tab' + (idx === 0 ? ' active' : '') + '" onclick="showRegion(\'' + r.id + '\')">' + r.name + '</div>';
+
+            sectHtml += '<div class="region-section' + (idx === 0 ? ' show' : '') + '" id="region-' + r.id + '">';
+            sectHtml += '<div class="region-card">';
+            sectHtml += '<div class="region-header"><span class="region-name">' + r.name + '</span><span class="region-info">' + r.info + '</span></div>';
+
+            sectHtml += '<table class="region-table"><thead><tr>';
+            r.cols.forEach(function(c) {
+                sectHtml += '<th>' + c + '</th>';
+            });
+            sectHtml += '</tr></thead><tbody>';
+
+            r.teams.forEach(function(t) {
+                var isHl = r.highlight && t[1] === r.highlight;
+                sectHtml += '<tr' + (isHl ? ' class="highlight"' : '') + '>';
+                t.forEach(function(val, ci) {
+                    if (val === null) val = '-';
+                    sectHtml += '<td>' + val + '</td>';
+                });
+                sectHtml += '</tr>';
+            });
+
+            sectHtml += '</tbody></table>';
+            sectHtml += '</div></div>';
+        });
+
+        tabsEl.innerHTML = tabsHtml;
+        sectionsEl.innerHTML = sectHtml;
+    }
+
+    function showRegion(id) {
+        document.querySelectorAll('.region-section').forEach(function(el) { el.classList.remove('show'); });
+        document.querySelectorAll('.region-tab').forEach(function(el) { el.classList.remove('active'); });
+        document.getElementById('region-' + id).classList.add('show');
+        var tabs = document.querySelectorAll('.region-tab');
+        for (var i = 0; i < tabs.length; i++) {
+            var r = regions[i];
+            if (r && r.id === id) tabs[i].classList.add('active');
+        }
+    }
+
+    // ==========================================
+    // INIT
+    // ==========================================
+    function initStats() {
+        loadTourneyTeams();
+        buildRegions();
+    }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="initStats()"></script>
+</body>
+</html>
