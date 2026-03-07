@@ -270,9 +270,52 @@
     }
 
     // ==========================================
-    // REGIONAL STANDINGS (hardcoded from PDFs/sheets)
+    // RSEQ API - diffusion.s1.rseq.ca
     // ==========================================
-    var regions = [
+    var RSEQ_BASE = 'https://diffusion.s1.rseq.ca/api';
+    var RSEQ_YEAR = '69056db0-aac8-49b0-8fc9-4091573205ea'; // 2025-2026
+
+    // Leagues to fetch from RSEQ API
+    var RSEQ_LEAGUES = [
+        {
+            id: 'sag',
+            name: 'Saguenay-Lac-Saint-Jean',
+            leagueId: 'cad4071e-1e26-4c8d-ab45-7f72fd92fa43',
+            type: 'volleyball', // uses StandingsVolleyball
+            highlight: null
+        },
+        {
+            id: 'estqc-est',
+            name: 'Est-du-Qu\u00e9bec (Est)',
+            leagueId: '330427e7-9293-4467-92d5-71bc84505a21',
+            type: 'standings', // uses Standings
+            highlight: null
+        },
+        {
+            id: 'estqc-ouest',
+            name: 'Est-du-Qu\u00e9bec (Ouest)',
+            leagueId: 'a7d24a40-66f9-473c-9956-d9dc2a462819',
+            type: 'standings',
+            highlight: 'Armand-Saint-Onge 1'
+        },
+        {
+            id: 'cn-d3',
+            name: 'C\u00f4te-Nord (D3)',
+            leagueId: '533891a0-5f82-4d54-b1fc-3815d1b6bed2',
+            type: 'volleyball',
+            highlight: null
+        },
+        {
+            id: 'cn-d4',
+            name: 'C\u00f4te-Nord (D4)',
+            leagueId: '775bc7f1-352c-4f4e-8339-8f5e65e0598d',
+            type: 'volleyball',
+            highlight: null
+        }
+    ];
+
+    // Hardcoded regions (not available on S1)
+    var STATIC_REGIONS = [
         {
             id: 'qca',
             name: 'QCA (Qu\u00e9bec-Chaudi\u00e8re-Appalaches)',
@@ -285,110 +328,73 @@
                 ['3', 'Jean-de-Br\u00e9beuf 1', 3, 3, 4, 135, 150, 3],
                 ['4', 'Aubier 1', 3, 8, 2, 152, 168, 4]
             ]
-        },
-        {
-            id: 'estqc',
-            name: 'Est-du-Qu\u00e9bec',
-            info: 'Benjamin F\u00e9minin \u2014 Classement g\u00e9n\u00e9ral apr\u00e8s Tournoi 2',
-            highlight: 'Armand Saint-Onge 1',
-            cols: ['#', '\u00c9quipe', 'MJ', 'SG', 'SP', 'PP', 'PC', 'Pts'],
-            teams: [
-                [1, 'Armand Saint-Onge 1', 8, 15, 1, 397, 336, 46],
-                [2, '\u00c9.S du Littoral 1', 8, 11, 5, 368, 327, 44],
-                [3, 'Sayabec 1', 8, 10, 6, 354, 311, 43],
-                [4, 'Paul-Hubert 1', 8, 10, 6, 362, 292, 43],
-                [5, 'C.E.Pouliot 1', 8, 9, 7, 351, 348, 42],
-                [6, 'P.Pasp\u00e9biac 1', 8, 10, 6, 353, 290, 40],
-                [7, 'Armand Saint-Onge 2', 8, 9, 7, 332, 326, 40],
-                [8, 'Gabriel-Le-Courtois 1', 8, 9, 7, 350, 333, 39],
-                [9, 'Matap\u00e9dia', 8, 11, 5, 369, 322, 45],
-                [10, 'C.E.Pouliot 2', 8, 10, 6, 362, 312, 38],
-                [11, 'MGR S\u00e9vigny 1', 8, 7, 9, 352, 335, 38],
-                [12, 'Chanoine-Beaudet 1', 8, 13, 3, 367, 299, 38],
-                [13, 'Matane 1', 8, 7, 9, 322, 345, 38],
-                [14, 'Antoine-Bernard 1', 8, 6, 10, 355, 361, 38],
-                [15, 'Mistral 1', 8, 5, 11, 284, 363, 36],
-                [16, 'Paul-Hubert 2', 8, 14, 2, 395, 278, 35],
-                [17, 'Paul-Hubert 3', 8, 2, 14, 263, 376, 35],
-                [18, 'C.E.Pouliot 3', 8, 10, 6, 340, 313, 34],
-                [19, 'Antoine-Roy', 8, 9, 7, 318, 357, 33],
-                [20, 'Cabano 1', 8, 10, 6, 387, 282, 33]
-            ]
-        },
-        {
-            id: 'ce',
-            name: 'Cantons-de-l\'Est',
-            info: 'Benjamin F\u00e9minin D3 \u2014 Classement apr\u00e8s 4e tournoi',
-            highlight: null,
-            cols: ['#', '\u00c9quipe', 'MJ', 'SG', 'SP', 'PP', 'PC', 'Rang'],
-            teams: [
-                [1, 'P. Montignac', 12, 24, 0, 600, 315, 1],
-                [2, 'Poly La Samare', 12, 14, 10, 511, 499, 2],
-                [3, '\u00c9.S. Tandem Sonia', 12, 12, 12, 498, 525, 3],
-                [4, 'C. St-Bernard', 13, 10, 16, 542, 542, 4],
-                [5, 'S. de Sherbrooke', 13, 12, 14, 539, 542, 5],
-                [6, 'C. Mont Notre-Dame', 14, 22, 6, 659, 529, 6],
-                [7, 'Sal\u00e9sien', 14, 18, 10, 612, 606, 7],
-                [8, '\u00c9.S. du Triolet', 15, 16, 14, 656, 645, 8],
-                [9, 'P. Louis St-Laurent', 15, 11, 19, 618, 677, 9],
-                [10, '\u00c9.S. La Ruche', 15, 8, 22, 583, 680, 9],
-                [11, 'Le Bois\u00e9', 15, 3, 27, 475, 733, 11]
-            ]
-        },
-        {
-            id: 'cn',
-            name: 'C\u00f4te-Nord',
-            info: 'Cadettes-Benjamines BF \u2014 Classement g\u00e9n\u00e9ral Rencontre 2',
-            highlight: 'JDN/Manikoutai (MED) BF',
-            cols: ['#', '\u00c9quipe'],
-            teams: [
-                [1, 'JDN/Manikoutai (MED) BF'],
-                [2, 'IESI 2 BF'],
-                [3, 'PDB (IFC) BF'],
-                [4, 'P. des Rivi\u00e8res CF'],
-                [5, 'ESSB (CLB) BF'],
-                [6, 'Uashkaikan CF'],
-                [7, 'JDN/Manikoutai (PG) BF'],
-                [8, 'JDN/Manikoutai (AD) BF'],
-                [9, 'Berges (MG) BF'],
-                [10, 'Uashkaikan BF'],
-                [11, 'PDB (GAC) CF'],
-                [12, 'Olamen BF'],
-                [13, 'CELA (ES) BF'],
-                [14, 'ESSB (LRP) BF'],
-                [15, 'PDB (MH) BF'],
-                [16, 'IESI 1 BF'],
-                [17, 'CELA (MNB) BF'],
-                [18, 'Mgr. Labrie (MFD) BF'],
-                [19, 'JDN/Manikoutai (DL) BF'],
-                [20, 'PDB (ML) BF'],
-                [21, 'ESSB (EG) BF']
-            ]
-        },
-        {
-            id: 'sag',
-            name: 'Saguenay-Lac-Saint-Jean',
-            info: 'Benjamin F\u00e9minin \u2014 Classement g\u00e9n\u00e9ral',
-            highlight: null,
-            cols: ['#', '\u00c9quipe', 'Pts'],
-            teams: [
-                [1, 'Odyss\u00e9e 1', 128],
-                [2, 'S\u00e9m. Chicoutimi', 114],
-                [3, '\u00c9. pol. Arvida 2', 110],
-                [4, '\u00c9. pol. Arvida 1', 107],
-                [5, '\u00c9. s. B\u00e2tisseurs', 98],
-                [6, 'Cit\u00e9', 94],
-                [7, '\u00c9. pol. Arvida 4', 79],
-                [7, 'PWD', 79],
-                [9, 'Quatre-Vents', 75],
-                [10, 'Grandes-Rivi\u00e8res', 69],
-                [11, 'Odyss\u00e9e 2', 68],
-                [12, 'PWD 2', null]
-            ]
         }
     ];
 
-    function buildRegions() {
+    var regions = [];
+
+    function fetchLeagueDiffusion(leagueId) {
+        return fetch(RSEQ_BASE + '/LeagueApi/GetLeagueDiffusion/?leagueId=' + leagueId)
+            .then(function(r) { return r.json(); });
+    }
+
+    function buildRegionFromAPI(cfg, data) {
+        var region = {
+            id: cfg.id,
+            name: cfg.name,
+            highlight: cfg.highlight,
+            cols: [],
+            teams: [],
+            info: ''
+        };
+
+        var sportName = data.SportName || 'Volleyball';
+        var catName = data.CategoryName || '';
+        var sexName = data.SexTypeName || '';
+        var divName = data.DivisionName || '';
+        region.info = [catName, sexName, divName].filter(Boolean).join(' ');
+
+        if (cfg.type === 'volleyball' && data.StandingsVolleyball && data.StandingsVolleyball.length > 0) {
+            // Determine which tournaments are shown
+            var showT = [];
+            var first = data.StandingsVolleyball[0];
+            for (var i = 1; i <= 12; i++) {
+                if (first['ShowTournament' + i]) showT.push(i);
+            }
+            region.cols = ['#', '\u00c9quipe'];
+            showT.forEach(function(t) { region.cols.push('T' + t); });
+            region.cols.push('Total');
+
+            data.StandingsVolleyball.forEach(function(s) {
+                var row = [s.PositionFormatted, s.TeamName];
+                showT.forEach(function(t) {
+                    row.push(s['Tournament' + t + 'Formatted'] || '-');
+                });
+                row.push(s.TotalPointsFormatted || '-');
+                region.teams.push(row);
+            });
+        } else if (data.Standings && data.Standings.length > 0) {
+            region.cols = ['#', '\u00c9quipe', 'MJ', 'SG', 'SP', 'PP', 'PC'];
+            data.Standings.forEach(function(s) {
+                region.teams.push([
+                    s.PositionFormatted,
+                    s.TeamName,
+                    s.GamesPlayed,
+                    s.SetWins,
+                    s.SetLosses,
+                    s.PointsFor,
+                    s.PointsAgaints
+                ]);
+            });
+        }
+        return region;
+    }
+
+    function buildRegionStatic(cfg) {
+        return cfg; // already in the right format
+    }
+
+    function renderRegions() {
         var tabsEl = document.getElementById('regionTabs');
         var sectionsEl = document.getElementById('regionSections');
         var tabsHtml = '';
@@ -401,23 +407,25 @@
             sectHtml += '<div class="region-card">';
             sectHtml += '<div class="region-header"><span class="region-name">' + r.name + '</span><span class="region-info">' + r.info + '</span></div>';
 
-            sectHtml += '<table class="region-table"><thead><tr>';
-            r.cols.forEach(function(c) {
-                sectHtml += '<th>' + c + '</th>';
-            });
-            sectHtml += '</tr></thead><tbody>';
+            if (r.teams.length === 0) {
+                sectHtml += '<div class="no-data">Aucune donn\u00e9e disponible</div>';
+            } else {
+                sectHtml += '<table class="region-table"><thead><tr>';
+                r.cols.forEach(function(c) { sectHtml += '<th>' + c + '</th>'; });
+                sectHtml += '</tr></thead><tbody>';
 
-            r.teams.forEach(function(t) {
-                var isHl = r.highlight && t[1] === r.highlight;
-                sectHtml += '<tr' + (isHl ? ' class="highlight"' : '') + '>';
-                t.forEach(function(val, ci) {
-                    if (val === null) val = '-';
-                    sectHtml += '<td>' + val + '</td>';
+                r.teams.forEach(function(t) {
+                    var isHl = r.highlight && t[1] === r.highlight;
+                    sectHtml += '<tr' + (isHl ? ' class="highlight"' : '') + '>';
+                    t.forEach(function(val) {
+                        if (val === null) val = '-';
+                        sectHtml += '<td>' + val + '</td>';
+                    });
+                    sectHtml += '</tr>';
                 });
-                sectHtml += '</tr>';
-            });
+                sectHtml += '</tbody></table>';
+            }
 
-            sectHtml += '</tbody></table>';
             sectHtml += '</div></div>';
         });
 
@@ -436,11 +444,38 @@
         }
     }
 
+    async function loadRegions() {
+        // Add static regions first (QCA)
+        STATIC_REGIONS.forEach(function(cfg) {
+            regions.push(buildRegionStatic(cfg));
+        });
+
+        // Fetch all RSEQ leagues in parallel
+        var results = await Promise.allSettled(
+            RSEQ_LEAGUES.map(function(cfg) {
+                return fetchLeagueDiffusion(cfg.leagueId).then(function(data) {
+                    return { cfg: cfg, data: data };
+                });
+            })
+        );
+
+        results.forEach(function(r) {
+            if (r.status === 'fulfilled') {
+                var region = buildRegionFromAPI(r.value.cfg, r.value.data);
+                if (region.teams.length > 0) {
+                    regions.push(region);
+                }
+            }
+        });
+
+        renderRegions();
+    }
+
     // ==========================================
     // INIT
     // ==========================================
     loadTourneyTeams();
-    buildRegions();
+    loadRegions();
     </script>
 </body>
 </html>

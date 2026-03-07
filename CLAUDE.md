@@ -8,7 +8,7 @@ Site statique (HTML/CSS/JS) hébergé sur GitHub Pages, connecté à Supabase po
 
 - **index.html** — Page résultats : scores en direct (Supabase Realtime), bilan V/D/Sets, scorekeeper intégré via `?score`, adresses et liens Maps
 - **classement.html** — Classement des poules du tournoi (fetch Google Sheets CSV)
-- **stats.html** — Stats de saison RSEQ : tableau des adversaires + classements régionaux complets (QCA, Est-du-Québec, Cantons-de-l'Est, Côte-Nord, Saguenay)
+- **stats.html** — Stats de saison RSEQ : tableau des adversaires (Supabase) + classements régionaux live (API RSEQ S1) + QCA hardcodé
 - **match.html** — Scorekeeper standalone (fallback, non lié dans la nav)
 - **supabase-setup.sql** — Schéma SQL de référence (déjà appliqué)
 
@@ -67,6 +67,17 @@ Colonnes clés : `nom_tournoi`, `nom_officiel`, `ecole`, `region_rseq`, `divisio
 | Bleu et Or | Saguenay | - | Club civil (Jonquière) |
 | Express U14 | - | - | Club civil |
 | Les Condors | - | - | Club civil |
+
+## API RSEQ (diffusion.s1.rseq.ca)
+
+- **API publique** (pas d'auth), utilisée par stats.html pour les classements régionaux live
+- **Base :** `https://diffusion.s1.rseq.ca/api`
+- **Endpoint principal :** `LeagueApi/GetLeagueDiffusion/?leagueId=X` — retourne classements, équipes, matchs
+- **SchoolYear 2025-2026 :** `69056db0-aac8-49b0-8fc9-4091573205ea`
+- **Sport Volleyball :** ID `16`
+- **Régions :** 0=Abitibi, 1=Cantons, 2=Côte-Nord, 3=Est-du-Qc, 12=QCA, 13=Saguenay
+- **Données :** `StandingsVolleyball` (points/tournoi) ou `Standings` (MJ/SG/SP/PP/PC)
+- QCA et Cantons-de-l'Est n'ont pas de volleyball sur S1 → données hardcodées
 
 ## Conventions
 
