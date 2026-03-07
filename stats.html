@@ -283,42 +283,51 @@
     var RSEQ_BASE = 'https://diffusion.s1.rseq.ca/api';
     var RSEQ_YEAR = '69056db0-aac8-49b0-8fc9-4091573205ea'; // 2025-2026
 
+    // Équipes du tournoi CVS à mettre en surbrillance (mots-clés dans le nom)
+    var TOURNEY_HIGHLIGHTS = [
+        'Jean-de-Br\u00e9beuf', 'Armand-Saint-Onge', 'Armand Saint-Onge',
+        'JDNManikoutai', 'JDN/Manikoutai', 'Odyss\u00e9e'
+    ];
+
+    function isHighlighted(teamName) {
+        var name = teamName.toLowerCase();
+        for (var i = 0; i < TOURNEY_HIGHLIGHTS.length; i++) {
+            if (name.indexOf(TOURNEY_HIGHLIGHTS[i].toLowerCase()) !== -1) return true;
+        }
+        return false;
+    }
+
     // Leagues to fetch from RSEQ API
     var RSEQ_LEAGUES = [
         {
             id: 'sag',
             name: 'Saguenay-Lac-Saint-Jean',
             leagueId: 'cad4071e-1e26-4c8d-ab45-7f72fd92fa43',
-            type: 'volleyball', // uses StandingsVolleyball
-            highlight: null
+            type: 'volleyball'
         },
         {
             id: 'estqc-est',
             name: 'Est-du-Qu\u00e9bec (Est)',
             leagueId: '330427e7-9293-4467-92d5-71bc84505a21',
-            type: 'standings', // uses Standings
-            highlight: null
+            type: 'standings'
         },
         {
             id: 'estqc-ouest',
             name: 'Est-du-Qu\u00e9bec (Ouest)',
             leagueId: 'a7d24a40-66f9-473c-9956-d9dc2a462819',
-            type: 'standings',
-            highlight: 'Armand-Saint-Onge 1'
+            type: 'standings'
         },
         {
             id: 'cn-d3',
             name: 'C\u00f4te-Nord (D3)',
             leagueId: '533891a0-5f82-4d54-b1fc-3815d1b6bed2',
-            type: 'volleyball',
-            highlight: null
+            type: 'volleyball'
         },
         {
             id: 'cn-d4',
             name: 'C\u00f4te-Nord (D4)',
             leagueId: '775bc7f1-352c-4f4e-8339-8f5e65e0598d',
-            type: 'volleyball',
-            highlight: null
+            type: 'volleyball'
         }
     ];
 
@@ -335,7 +344,6 @@
                     id: 'qca',
                     name: 'QCA (Qu\u00e9bec-Chaudi\u00e8re-Appalaches)',
                     info: 'Benjamin F\u00e9minin \u2014 Classement g\u00e9n\u00e9ral',
-                    highlight: 'Jean-de-Br\u00e9beuf 1',
                     cols: ['Rang', '\u00c9quipe', 'T3', 'T4', 'T5', 'Total'],
                     teams: []
                 };
@@ -437,7 +445,7 @@
                 sectHtml += '</tr></thead><tbody>';
 
                 r.teams.forEach(function(t) {
-                    var isHl = r.highlight && t[1] === r.highlight;
+                    var isHl = isHighlighted(t[1]);
                     sectHtml += '<tr' + (isHl ? ' class="highlight"' : '') + '>';
                     t.forEach(function(val) {
                         if (val === null) val = '-';
