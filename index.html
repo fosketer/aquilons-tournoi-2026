@@ -753,6 +753,27 @@
             font-size: 0.65rem;
             color: var(--silver-dark);
         }
+
+        .sk-toggle-btn {
+            display: block;
+            margin: 0.8rem auto 0;
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            padding: 0.4rem 1.2rem;
+            border-radius: 6px;
+            border: 1px solid rgba(26,86,184,0.3);
+            background: rgba(26,86,184,0.1);
+            color: var(--blue-light);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sk-toggle-btn:hover {
+            background: rgba(26,86,184,0.2);
+            border-color: var(--blue-light);
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -988,6 +1009,7 @@
                 '<div class="sb-set-info">' + setInfo + '</div>' +
                 setsHtml +
                 venueHtml +
+                '<button class="sk-toggle-btn" onclick="toggleScorekeeper()">Scorekeeper</button>' +
             '</div>';
     }
 
@@ -1609,18 +1631,32 @@
         .subscribe();
 
     // ==========================================
+    // SCOREKEEPER TOGGLE
+    // ==========================================
+    function toggleScorekeeper() {
+        var sk = document.getElementById('scorekeeper');
+        var isShown = sk.classList.toggle('show');
+        if (isShown && !bracketScanStarted) {
+            bracketScanStarted = true;
+            scanBrackets();
+            setInterval(scanBrackets, 120000);
+        }
+    }
+
+    // ==========================================
     // INIT
     // ==========================================
     var urlParams = new URLSearchParams(window.location.search);
+    var bracketScanStarted = false;
     if (urlParams.has('score')) {
         document.getElementById('scorekeeper').classList.add('show');
+        bracketScanStarted = true;
     }
 
     loadAdversaires().then(function() {
         loadMatchs();
         skLoad();
-        // Scan brackets every 2 minutes (only for scorekeeper mode)
-        if (urlParams.has('score')) {
+        if (bracketScanStarted) {
             scanBrackets();
             setInterval(scanBrackets, 120000);
         }
