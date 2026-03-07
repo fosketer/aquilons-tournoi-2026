@@ -872,7 +872,8 @@
         advScore: 0,
         sets: [],
         pointLog: [],
-        matchDone: false
+        matchDone: false,
+        setTimestamps: { set1_debut: null, set1_fin: null, set2_debut: null, set2_fin: null }
     };
 
     var matchDbId = null;
@@ -931,12 +932,25 @@
         }
     }
 
+    function setDuration(setNum) {
+        var ts = sk.setTimestamps || {};
+        var debut = ts['set' + setNum + '_debut'];
+        var fin = ts['set' + setNum + '_fin'];
+        if (!debut || !fin) return '';
+        var ms = new Date(fin) - new Date(debut);
+        var mins = Math.floor(ms / 60000);
+        var secs = Math.floor((ms % 60000) / 1000);
+        return mins + ':' + String(secs).padStart(2, '0');
+    }
+
     function skRenderSetHistory() {
         document.getElementById('skSetHistory').innerHTML = sk.sets.map(function(s, i) {
             var won = s.aq > s.adv;
+            var dur = setDuration(i + 1);
+            var durHtml = dur ? ' <span style="font-size:0.6rem;color:var(--gray);font-weight:400">(' + dur + ')</span>' : '';
             return '<div class="sk-set-result">' +
                 '<span class="sn">Set ' + (i + 1) + '</span>' +
-                '<span class="ss ' + (won ? 'won' : 'lost') + '">' + s.aq + ' - ' + s.adv + '</span>' +
+                '<span class="ss ' + (won ? 'won' : 'lost') + '">' + s.aq + ' - ' + s.adv + durHtml + '</span>' +
                 '<span class="sw ' + (won ? 'aq' : 'adv') + '">' + (won ? 'Aquilons' : sk.advName) + '</span>' +
             '</div>';
         }).join('');
@@ -959,6 +973,7 @@
     // ==========================================
     function skSync() {
         if (!matchDbId) return;
+        var ts = sk.setTimestamps || {};
         var updates = {
             aq_score_courant: sk.aqScore,
             adv_score_courant: sk.advScore,
@@ -966,7 +981,11 @@
             aq_set1: sk.sets.length >= 1 ? sk.sets[0].aq : null,
             adv_set1: sk.sets.length >= 1 ? sk.sets[0].adv : null,
             aq_set2: sk.sets.length >= 2 ? sk.sets[1].aq : null,
-            adv_set2: sk.sets.length >= 2 ? sk.sets[1].adv : null
+            adv_set2: sk.sets.length >= 2 ? sk.sets[1].adv : null,
+            set1_debut: ts.set1_debut || null,
+            set1_fin: ts.set1_fin || null,
+            set2_debut: ts.set2_debut || null,
+            set2_fin: ts.set2_fin || null
         };
         if (sk.matchDone) {
             var setsWon = sk.sets.filter(function(s) { return s.aq > s.adv; }).length;
@@ -1000,7 +1019,8 @@
             advScore: 0,
             sets: [],
             pointLog: [],
-            matchDone: false
+            matchDone: false,
+            setTimestamps: { set1_debut: null, set1_fin: null, set2_debut: null, set2_fin: null }
         };
 
         document.getElementById('skAdvName').textContent = sk.advName;
@@ -1031,6 +1051,12 @@
         if (!sk.matchNum || sk.matchDone) return;
         if (sk.currentSet > 2) return;
 
+        // Record set start on first point
+        var tsKey = 'set' + sk.currentSet + '_debut';
+        if (!sk.setTimestamps[tsKey]) {
+            sk.setTimestamps[tsKey] = new Date().toISOString();
+        }
+
         if (team === 'aq') sk.aqScore++;
         else sk.advScore++;
         sk.pointLog.push(team);
@@ -1056,6 +1082,8 @@
     function skCheckSetEnd() {
         var aq = sk.aqScore, adv = sk.advScore;
         if ((aq >= 25 || adv >= 25) && Math.abs(aq - adv) >= 2) {
+            // Record set end time
+            sk.setTimestamps['set' + sk.currentSet + '_fin'] = new Date().toISOString();
             sk.sets.push({ aq: aq, adv: adv });
             skRenderSetHistory();
             skUpdateBubbles();
@@ -1081,10 +1109,12 @@
         var won = setsWon > sk.sets.length - setsWon;
         var banner = document.getElementById('skResult');
         banner.className = 'sk-result-banner show ' + (won ? 'win-banner' : 'loss-banner');
+        var d1 = setDuration(1), d2 = setDuration(2);
+        var d1t = d1 ? ' (' + d1 + ')' : '', d2t = d2 ? ' (' + d2 + ')' : '';
         banner.innerHTML =
             '<div class="rt">' + (won ? 'Victoire!' : 'D\u00e9faite') + '</div>' +
-            '<div class="rd">Set 1: ' + sk.sets[0].aq + '-' + sk.sets[0].adv +
-            ' \u00b7 Set 2: ' + sk.sets[1].aq + '-' + sk.sets[1].adv + '</div>';
+            '<div class="rd">Set 1: ' + sk.sets[0].aq + '-' + sk.sets[0].adv + d1t +
+            ' \u00b7 Set 2: ' + sk.sets[1].aq + '-' + sk.sets[1].adv + d2t + '</div>';
     }
 
     function skUndo() {
@@ -1114,6 +1144,8 @@
         sk.aqScore = 0;
         sk.advScore = 0;
         sk.pointLog = [];
+        sk.setTimestamps['set' + sk.currentSet + '_debut'] = null;
+        sk.setTimestamps['set' + sk.currentSet + '_fin'] = null;
         document.getElementById('skScoreAq').textContent = '0';
         document.getElementById('skScoreAdv').textContent = '0';
         skSave();
