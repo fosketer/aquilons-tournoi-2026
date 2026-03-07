@@ -355,6 +355,13 @@
             color: var(--blue-light);
         }
 
+        .match-live-score {
+            padding: 0 1rem 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--blue-light);
+        }
+
         /* FOOTER */
         .footer {
             text-align: center;
@@ -375,6 +382,7 @@
             margin: 1rem 0;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -397,22 +405,22 @@
     <!-- BILAN -->
     <div class="bilan">
         <div class="bilan-item">
-            <div class="bilan-number wins">0</div>
+            <div class="bilan-number wins" id="bilanWins">-</div>
             <div class="bilan-label">Victoires</div>
         </div>
         <div class="bilan-separator"></div>
         <div class="bilan-item">
-            <div class="bilan-number losses">0</div>
+            <div class="bilan-number losses" id="bilanLosses">-</div>
             <div class="bilan-label">D&eacute;faites</div>
         </div>
         <div class="bilan-separator"></div>
         <div class="bilan-item">
-            <div class="bilan-number sets-w">0</div>
+            <div class="bilan-number sets-w" id="bilanSetsW">-</div>
             <div class="bilan-label">Sets gagn&eacute;s</div>
         </div>
         <div class="bilan-separator"></div>
         <div class="bilan-item">
-            <div class="bilan-number sets-l">0</div>
+            <div class="bilan-number sets-l" id="bilanSetsL">-</div>
             <div class="bilan-label">Sets perdus</div>
         </div>
     </div>
@@ -420,203 +428,111 @@
     <!-- MATCHS -->
     <div class="matches">
         <div class="section-title">Matchs du jour</div>
-
-        <div class="last-update">Derni&egrave;re mise &agrave; jour : en attente du premier match</div>
-
-        <!-- MATCH 1 -->
-        <div class="match-card upcoming" id="match1">
-            <div class="match-header">
-                <span class="match-time">9h30</span>
-                <span class="match-badge badge-upcoming">&Agrave; venir</span>
-            </div>
-            <div class="match-body">
-                <div class="match-teams">
-                    <div class="team-row">
-                        <span class="team-label is-aquilon">Aquilons</span>
-                        <div class="set-scores">
-                            <span class="set-score">-</span>
-                            <span class="set-score">-</span>
-                        </div>
-                    </div>
-                    <div class="team-row">
-                        <span class="team-label">Husky JDN</span>
-                        <div class="set-scores">
-                            <span class="set-score">-</span>
-                            <span class="set-score">-</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="match-location">Terrain 5 &middot; <a href="https://www.google.com/maps/place/605+Boulevard+Saint-Luc+O,+Alma,+QC" target="_blank">Centre Mario-Tremblay</a></div>
-        </div>
-
-        <!-- MATCH 2 -->
-        <div class="match-card upcoming" id="match2">
-            <div class="match-header">
-                <span class="match-time">10h30</span>
-                <span class="match-badge badge-upcoming">&Agrave; venir</span>
-            </div>
-            <div class="match-body">
-                <div class="match-teams">
-                    <div class="team-row">
-                        <span class="team-label is-aquilon">Aquilons</span>
-                        <div class="set-scores">
-                            <span class="set-score">-</span>
-                            <span class="set-score">-</span>
-                        </div>
-                    </div>
-                    <div class="team-row">
-                        <span class="team-label">Bleu et Or</span>
-                        <div class="set-scores">
-                            <span class="set-score">-</span>
-                            <span class="set-score">-</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="match-location">Terrain 11 &middot; <a href="https://www.google.com/maps/place/441+rue+Joseph-W.-Fleury,+Alma,+QC" target="_blank">&Eacute;cole Jean-Gauthier</a></div>
-        </div>
-
-        <!-- MATCH 3 -->
-        <div class="match-card upcoming" id="match3">
-            <div class="match-header">
-                <span class="match-time">11h30</span>
-                <span class="match-badge badge-upcoming">&Agrave; venir</span>
-            </div>
-            <div class="match-body">
-                <div class="match-teams">
-                    <div class="team-row">
-                        <span class="team-label is-aquilon">Aquilons</span>
-                        <div class="set-scores">
-                            <span class="set-score">-</span>
-                            <span class="set-score">-</span>
-                        </div>
-                    </div>
-                    <div class="team-row">
-                        <span class="team-label">Express U14</span>
-                        <div class="set-scores">
-                            <span class="set-score">-</span>
-                            <span class="set-score">-</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="match-location">Terrain 7 &middot; <a href="https://www.google.com/maps/place/500+Avenue+des+M%C3%A9tiers,+Alma,+QC" target="_blank">Camille-Lavoie</a></div>
-        </div>
-
-        <!-- MATCH 4 -->
-        <div class="match-card upcoming" id="match4">
-            <div class="match-header">
-                <span class="match-time">14h30</span>
-                <span class="match-badge badge-upcoming">&Agrave; venir</span>
-            </div>
-            <div class="match-body">
-                <div class="match-teams">
-                    <div class="team-row">
-                        <span class="team-label is-aquilon">Aquilons</span>
-                        <div class="set-scores">
-                            <span class="set-score">-</span>
-                            <span class="set-score">-</span>
-                        </div>
-                    </div>
-                    <div class="team-row">
-                        <span class="team-label">Les Condors</span>
-                        <div class="set-scores">
-                            <span class="set-score">-</span>
-                            <span class="set-score">-</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="match-location">Terrain 10 &middot; <a href="https://www.google.com/maps/place/441+rue+Joseph-W.-Fleury,+Alma,+QC" target="_blank">&Eacute;cole Jean-Gauthier</a></div>
-        </div>
-
-        <!-- MATCH 5 -->
-        <div class="match-card upcoming" id="match5">
-            <div class="match-header">
-                <span class="match-time">16h30</span>
-                <span class="match-badge badge-upcoming">&Agrave; venir</span>
-            </div>
-            <div class="match-body">
-                <div class="match-teams">
-                    <div class="team-row">
-                        <span class="team-label is-aquilon">Aquilons</span>
-                        <div class="set-scores">
-                            <span class="set-score">-</span>
-                            <span class="set-score">-</span>
-                        </div>
-                    </div>
-                    <div class="team-row">
-                        <span class="team-label">Bleu et Or</span>
-                        <div class="set-scores">
-                            <span class="set-score">-</span>
-                            <span class="set-score">-</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="match-location">Terrain 11 &middot; <a href="https://www.google.com/maps/place/441+rue+Joseph-W.-Fleury,+Alma,+QC" target="_blank">&Eacute;cole Jean-Gauthier</a></div>
-        </div>
-
-        <!-- MATCH 6 -->
-        <div class="match-card upcoming" id="match6">
-            <div class="match-header">
-                <span class="match-time">17h30</span>
-                <span class="match-badge badge-upcoming">&Agrave; venir</span>
-            </div>
-            <div class="match-body">
-                <div class="match-teams">
-                    <div class="team-row">
-                        <span class="team-label is-aquilon">Aquilons</span>
-                        <div class="set-scores">
-                            <span class="set-score">-</span>
-                            <span class="set-score">-</span>
-                        </div>
-                    </div>
-                    <div class="team-row">
-                        <span class="team-label">Tigres d'Am&eacute;</span>
-                        <div class="set-scores">
-                            <span class="set-score">-</span>
-                            <span class="set-score">-</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="match-location">Terrain 8 &middot; <a href="https://www.google.com/maps/place/500+Avenue+des+M%C3%A9tiers,+Alma,+QC" target="_blank">Camille-Lavoie</a></div>
-        </div>
-
-        <!-- MATCH 7 -->
-        <div class="match-card upcoming" id="match7">
-            <div class="match-header">
-                <span class="match-time">19h30</span>
-                <span class="match-badge badge-upcoming">&Agrave; venir</span>
-            </div>
-            <div class="match-body">
-                <div class="match-teams">
-                    <div class="team-row">
-                        <span class="team-label is-aquilon">Aquilons</span>
-                        <div class="set-scores">
-                            <span class="set-score">-</span>
-                            <span class="set-score">-</span>
-                        </div>
-                    </div>
-                    <div class="team-row">
-                        <span class="team-label">Husky KS</span>
-                        <div class="set-scores">
-                            <span class="set-score">-</span>
-                            <span class="set-score">-</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="match-location">Terrain 6 &middot; <a href="https://www.google.com/maps/place/605+Boulevard+Saint-Luc+O,+Alma,+QC" target="_blank">Centre Mario-Tremblay</a></div>
-        </div>
-
+        <div class="last-update" id="lastUpdate">Chargement...</div>
+        <div id="matchsContainer"></div>
     </div>
 
     <div class="footer">
         Aquilons &middot; Jean de Br&eacute;beuf &middot; Tournoi CVS 2026
     </div>
+
+<script>
+    const SUPABASE_URL = 'https://rtbmpcitrymeqzpjwneh.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Ym1wY2l0cnltZXF6cGp3bmVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NDgyOTEsImV4cCI6MjA4ODQyNDI5MX0.6qvaCDLDiCX4KZLJHK1_JiPHROoCtiiEQjsBJbS4CiU';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const TOURNOI_ID = 'a0000000-0000-0000-0000-000000000001';
+
+    async function loadMatchs() {
+        const { data } = await sb.from('matchs').select('*').eq('tournoi_id', TOURNOI_ID).order('numero');
+        if (!data) return;
+        renderMatchs(data);
+        updateBilan(data);
+    }
+
+    function scoreCell(aqScore, advScore) {
+        if (aqScore == null) return { aq: '-', adv: '-', aqCls: '', advCls: '' };
+        const won = aqScore > advScore;
+        return { aq: aqScore, adv: advScore, aqCls: won ? 'won' : 'lost', advCls: won ? 'lost' : 'won' };
+    }
+
+    function renderMatchs(matchs) {
+        const container = document.getElementById('matchsContainer');
+        const statusMap = {
+            win:  { cls: 'win', badge: 'badge-win', text: 'Victoire' },
+            loss: { cls: 'loss', badge: 'badge-loss', text: 'D\u00e9faite' },
+            live: { cls: 'live', badge: 'badge-live', text: '\u25CF En cours' }
+        };
+        const defaultSt = { cls: 'upcoming', badge: 'badge-upcoming', text: '\u00c0 venir' };
+
+        container.innerHTML = matchs.map(function(m) {
+            var st = statusMap[m.statut] || defaultSt;
+            var s1 = scoreCell(m.aq_set1, m.adv_set1);
+            var s2 = scoreCell(m.aq_set2, m.adv_set2);
+
+            var liveInfo = '';
+            if (m.statut === 'live' && m.set_courant > 0) {
+                liveInfo = '<div class="match-live-score">Set ' + m.set_courant + ' en cours : ' + m.aq_score_courant + ' - ' + m.adv_score_courant + '</div>';
+            }
+
+            return '<div class="match-card ' + st.cls + '">' +
+                '<div class="match-header">' +
+                    '<span class="match-time">' + m.heure + '</span>' +
+                    '<span class="match-badge ' + st.badge + '">' + st.text + '</span>' +
+                '</div>' +
+                '<div class="match-body"><div class="match-teams">' +
+                    '<div class="team-row">' +
+                        '<span class="team-label is-aquilon">Aquilons</span>' +
+                        '<div class="set-scores">' +
+                            '<span class="set-score ' + s1.aqCls + '">' + s1.aq + '</span>' +
+                            '<span class="set-score ' + s2.aqCls + '">' + s2.aq + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="team-row">' +
+                        '<span class="team-label">' + m.adversaire + '</span>' +
+                        '<div class="set-scores">' +
+                            '<span class="set-score ' + s1.advCls + '">' + s1.adv + '</span>' +
+                            '<span class="set-score ' + s2.advCls + '">' + s2.adv + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                '</div></div>' +
+                liveInfo +
+                '<div class="match-location">' + m.terrain + ' &middot; <a href="' + m.lieu_maps_url + '" target="_blank">' + m.lieu_nom + '</a></div>' +
+            '</div>';
+        }).join('');
+
+        var updateEl = document.getElementById('lastUpdate');
+        var live = matchs.find(function(m) { return m.statut === 'live'; });
+        var played = matchs.filter(function(m) { return m.statut === 'win' || m.statut === 'loss'; }).length;
+        if (live) {
+            updateEl.textContent = 'En cours : vs ' + live.adversaire + ' (Set ' + live.set_courant + ' : ' + live.aq_score_courant + '-' + live.adv_score_courant + ')';
+        } else if (played > 0) {
+            updateEl.textContent = played + '/' + matchs.length + ' matchs jou\u00e9s';
+        } else {
+            updateEl.textContent = 'En attente du premier match';
+        }
+    }
+
+    function updateBilan(matchs) {
+        var wins = 0, losses = 0, setsW = 0, setsL = 0;
+        matchs.forEach(function(m) {
+            if (m.statut === 'win') wins++;
+            if (m.statut === 'loss') losses++;
+            if (m.aq_set1 != null && m.adv_set1 != null) { m.aq_set1 > m.adv_set1 ? setsW++ : setsL++; }
+            if (m.aq_set2 != null && m.adv_set2 != null) { m.aq_set2 > m.adv_set2 ? setsW++ : setsL++; }
+        });
+        document.getElementById('bilanWins').textContent = wins;
+        document.getElementById('bilanLosses').textContent = losses;
+        document.getElementById('bilanSetsW').textContent = setsW;
+        document.getElementById('bilanSetsL').textContent = setsL;
+    }
+
+    // Realtime: recharger quand un match change
+    sb.channel('matchs-realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'matchs' }, function() { loadMatchs(); })
+        .subscribe();
+
+    loadMatchs();
+</script>
 
 </body>
 </html>

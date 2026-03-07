@@ -377,21 +377,6 @@
             margin-top: 0.3rem;
         }
 
-        .match-result-banner .score-cmd {
-            margin-top: 0.8rem;
-            padding: 0.6rem;
-            background: var(--bg);
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 0.75rem;
-            color: var(--blue-light);
-            word-break: break-all;
-        }
-
-        .match-result-banner .copy-btn {
-            margin-top: 0.5rem;
-        }
-
         /* POINT LOG */
         .point-log-toggle {
             text-align: center;
@@ -452,6 +437,19 @@
             color: var(--silver);
         }
 
+        /* SYNC STATUS */
+        .sync-status {
+            text-align: center;
+            padding: 0.3rem;
+            font-size: 0.6rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .sync-status.connected { color: var(--win); }
+        .sync-status.error { color: var(--loss); }
+
         /* FOOTER */
         .footer {
             text-align: center;
@@ -471,6 +469,7 @@
             opacity: 0.4;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -498,6 +497,9 @@
             <option value="7" data-adv="Husky KS" data-time="19h30">Match 7 - 19h30 vs Husky KS</option>
         </select>
     </div>
+
+    <!-- SYNC STATUS -->
+    <div class="sync-status" id="syncStatus">Supabase: connexion...</div>
 
     <!-- SET INDICATOR -->
     <div class="set-indicator">
@@ -546,36 +548,98 @@
     </div>
 
 <script>
-    // State
-    let state = {
+    // ==========================================
+    // SUPABASE
+    // ==========================================
+    var SUPABASE_URL = 'https://rtbmpcitrymeqzpjwneh.supabase.co';
+    var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Ym1wY2l0cnltZXF6cGp3bmVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NDgyOTEsImV4cCI6MjA4ODQyNDI5MX0.6qvaCDLDiCX4KZLJHK1_JiPHROoCtiiEQjsBJbS4CiU';
+    var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    var TOURNOI_ID = 'a0000000-0000-0000-0000-000000000001';
+    var matchDbId = null;
+
+    function setSyncStatus(text, cls) {
+        var el = document.getElementById('syncStatus');
+        el.textContent = text;
+        el.className = 'sync-status ' + (cls || '');
+    }
+
+    // Test connection
+    sb.from('matchs').select('id').limit(1).then(function(res) {
+        if (res.error) { setSyncStatus('Supabase: erreur', 'error'); }
+        else { setSyncStatus('Supabase: connect\u00e9', 'connected'); }
+    });
+
+    // ==========================================
+    // STATE
+    // ==========================================
+    var state = {
         matchNum: null,
         advName: '',
         currentSet: 1,
         aqScore: 0,
         advScore: 0,
-        sets: [],         // [{aq: 25, adv: 18}, ...]
-        pointLog: [],     // ['aq', 'adv', 'aq', ...]
+        sets: [],
+        pointLog: [],
         serviceAq: true,
         matchDone: false
     };
 
-    const SAVE_KEY = 'aquilons-match-state';
+    var SAVE_KEY = 'aquilons-match-state';
 
-    // Persistence
     function saveState() {
         try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch(e) {}
     }
 
     function loadState() {
         try {
-            const s = localStorage.getItem(SAVE_KEY);
+            var s = localStorage.getItem(SAVE_KEY);
             if (s) {
                 state = JSON.parse(s);
                 applyState();
+                // Restore matchDbId from Supabase
+                if (state.matchNum) {
+                    sb.from('matchs').select('id')
+                        .eq('tournoi_id', TOURNOI_ID)
+                        .eq('numero', parseInt(state.matchNum))
+                        .single()
+                        .then(function(res) {
+                            if (res.data) matchDbId = res.data.id;
+                        });
+                }
             }
         } catch(e) {}
     }
 
+    // ==========================================
+    // SUPABASE SYNC
+    // ==========================================
+    function syncToSupabase() {
+        if (!matchDbId) return;
+        var updates = {
+            aq_score_courant: state.aqScore,
+            adv_score_courant: state.advScore,
+            set_courant: state.currentSet,
+            aq_set1: state.sets.length >= 1 ? state.sets[0].aq : null,
+            adv_set1: state.sets.length >= 1 ? state.sets[0].adv : null,
+            aq_set2: state.sets.length >= 2 ? state.sets[1].aq : null,
+            adv_set2: state.sets.length >= 2 ? state.sets[1].adv : null
+        };
+        if (state.matchDone) {
+            var setsWon = state.sets.filter(function(s) { return s.aq > s.adv; }).length;
+            var setsLost = state.sets.filter(function(s) { return s.adv > s.aq; }).length;
+            updates.statut = setsWon > setsLost ? 'win' : 'loss';
+            updates.set_courant = 0;
+        } else {
+            updates.statut = 'live';
+        }
+        sb.from('matchs').update(updates).eq('id', matchDbId).then(function(res) {
+            if (res.error) setSyncStatus('Erreur sync: ' + res.error.message, 'error');
+        });
+    }
+
+    // ==========================================
+    // UI
+    // ==========================================
     function applyState() {
         if (state.matchNum) {
             document.getElementById('matchSelect').value = state.matchNum;
@@ -591,10 +655,12 @@
         updateDisabledState();
     }
 
-    // Match selection
+    // ==========================================
+    // MATCH SELECTION
+    // ==========================================
     function selectMatch() {
-        const sel = document.getElementById('matchSelect');
-        const opt = sel.options[sel.selectedIndex];
+        var sel = document.getElementById('matchSelect');
+        var opt = sel.options[sel.selectedIndex];
         if (!opt.value) return;
 
         state = {
@@ -620,52 +686,72 @@
         updateService();
         updateDisabledState();
         saveState();
+
+        // Get match UUID from Supabase and set as live
+        sb.from('matchs').select('id')
+            .eq('tournoi_id', TOURNOI_ID)
+            .eq('numero', parseInt(opt.value))
+            .single()
+            .then(function(res) {
+                if (res.data) {
+                    matchDbId = res.data.id;
+                    // Delete old points for this match (fresh start)
+                    sb.from('points').delete().eq('match_id', matchDbId).then(function() {
+                        syncToSupabase();
+                    });
+                }
+            });
     }
 
-    // Scoring
+    // ==========================================
+    // SCORING
+    // ==========================================
     function addPoint(team) {
         if (!state.matchNum || state.matchDone) return;
         if (state.currentSet > 2) return;
 
-        if (team === 'aq') {
-            state.aqScore++;
-        } else {
-            state.advScore++;
-        }
+        if (team === 'aq') state.aqScore++;
+        else state.advScore++;
 
         state.pointLog.push(team);
 
         document.getElementById('scoreAq').textContent = state.aqScore;
         document.getElementById('scoreAdv').textContent = state.advScore;
 
-        // Auto switch service every point (side-out scoring visual)
         state.serviceAq = (team === 'aq');
         updateService();
-
         renderPointLog();
+
+        // Insert point to Supabase
+        if (matchDbId) {
+            sb.from('points').insert({
+                match_id: matchDbId,
+                set_num: state.currentSet,
+                equipe: team,
+                aq_score: state.aqScore,
+                adv_score: state.advScore
+            }).then(function() {});
+        }
+
         checkSetEnd();
         saveState();
+        syncToSupabase();
     }
 
     function checkSetEnd() {
-        const aq = state.aqScore;
-        const adv = state.advScore;
-        const minToWin = 25;
+        var aq = state.aqScore;
+        var adv = state.advScore;
 
-        // Set won: reach 25+ with 2pt lead
-        if ((aq >= minToWin || adv >= minToWin) && Math.abs(aq - adv) >= 2) {
-            // Record set
+        if ((aq >= 25 || adv >= 25) && Math.abs(aq - adv) >= 2) {
             state.sets.push({ aq: aq, adv: adv });
             renderSetHistory();
             updateSetBubbles();
 
             if (state.sets.length >= 2) {
-                // Match over
                 state.matchDone = true;
                 showMatchResult();
                 updateDisabledState();
             } else {
-                // Next set
                 state.currentSet = 2;
                 state.aqScore = 0;
                 state.advScore = 0;
@@ -675,68 +761,55 @@
                 document.getElementById('pointLogInner').innerHTML = '';
                 updateSetBubbles();
             }
-            saveState();
         }
     }
 
     function showMatchResult() {
-        const setsWon = state.sets.filter(s => s.aq > s.adv).length;
-        const setsLost = state.sets.filter(s => s.adv > s.aq).length;
-        const won = setsWon > setsLost;
+        var setsWon = state.sets.filter(function(s) { return s.aq > s.adv; }).length;
+        var setsLost = state.sets.filter(function(s) { return s.adv > s.aq; }).length;
+        var won = setsWon > setsLost;
 
-        const banner = document.getElementById('matchResult');
+        var banner = document.getElementById('matchResult');
         banner.className = 'match-result-banner show ' + (won ? 'win-banner' : 'loss-banner');
 
-        const s1 = state.sets[0];
-        const s2 = state.sets[1];
-        const scoreCmd = `/score match ${state.matchNum}: ${s1.aq}-${s1.adv}, ${s2.aq}-${s2.adv}`;
+        var s1 = state.sets[0];
+        var s2 = state.sets[1];
 
-        banner.innerHTML = `
-            <div class="result-text">${won ? 'Victoire!' : 'D\u00e9faite'}</div>
-            <div class="result-detail">
-                Set 1: ${s1.aq}-${s1.adv} &middot; Set 2: ${s2.aq}-${s2.adv}
-            </div>
-            <div class="score-cmd" id="scoreCmd">${scoreCmd}</div>
-            <button class="btn primary copy-btn" onclick="copyCmd()">Copier la commande /score</button>
-        `;
+        banner.innerHTML =
+            '<div class="result-text">' + (won ? 'Victoire!' : 'D\u00e9faite') + '</div>' +
+            '<div class="result-detail">Set 1: ' + s1.aq + '-' + s1.adv + ' &middot; Set 2: ' + s2.aq + '-' + s2.adv + '</div>';
 
         updateDisabledState();
     }
 
-    function copyCmd() {
-        const cmd = document.getElementById('scoreCmd').textContent;
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(cmd).then(() => {
-                const btn = document.querySelector('.copy-btn');
-                btn.textContent = 'Copi\u00e9!';
-                setTimeout(() => { btn.textContent = 'Copier la commande /score'; }, 2000);
-            });
-        } else {
-            // Fallback
-            const range = document.createRange();
-            range.selectNode(document.getElementById('scoreCmd'));
-            window.getSelection().removeAllRanges();
-            window.getSelection().addRange(range);
-            document.execCommand('copy');
-            window.getSelection().removeAllRanges();
-        }
-    }
-
-    // Controls
+    // ==========================================
+    // CONTROLS
+    // ==========================================
     function undo() {
         if (!state.matchNum || state.matchDone || state.pointLog.length === 0) return;
 
-        const last = state.pointLog.pop();
-        if (last === 'aq') {
-            state.aqScore = Math.max(0, state.aqScore - 1);
-        } else {
-            state.advScore = Math.max(0, state.advScore - 1);
-        }
+        var last = state.pointLog.pop();
+        if (last === 'aq') state.aqScore = Math.max(0, state.aqScore - 1);
+        else state.advScore = Math.max(0, state.advScore - 1);
 
         document.getElementById('scoreAq').textContent = state.aqScore;
         document.getElementById('scoreAdv').textContent = state.advScore;
         renderPointLog();
         saveState();
+
+        // Delete last point from Supabase
+        if (matchDbId) {
+            sb.from('points').select('id')
+                .eq('match_id', matchDbId)
+                .order('id', { ascending: false })
+                .limit(1)
+                .then(function(res) {
+                    if (res.data && res.data[0]) {
+                        sb.from('points').delete().eq('id', res.data[0].id).then(function() {});
+                    }
+                });
+            syncToSupabase();
+        }
     }
 
     function resetSet() {
@@ -750,6 +823,15 @@
         document.getElementById('scoreAdv').textContent = '0';
         document.getElementById('pointLogInner').innerHTML = '';
         saveState();
+
+        // Delete points for current set in Supabase
+        if (matchDbId) {
+            sb.from('points').delete()
+                .eq('match_id', matchDbId)
+                .eq('set_num', state.currentSet)
+                .then(function() {});
+            syncToSupabase();
+        }
     }
 
     function switchService() {
@@ -763,10 +845,12 @@
         document.getElementById('serviceAdv').className = 'service-dot' + (!state.serviceAq ? ' active' : '');
     }
 
-    // UI updates
+    // ==========================================
+    // UI UPDATES
+    // ==========================================
     function updateSetBubbles() {
-        const b1 = document.getElementById('set1Bubble');
-        const b2 = document.getElementById('set2Bubble');
+        var b1 = document.getElementById('set1Bubble');
+        var b2 = document.getElementById('set2Bubble');
 
         b1.className = 'set-bubble';
         b2.className = 'set-bubble';
@@ -774,33 +858,33 @@
         if (state.sets.length === 0) {
             b1.classList.add('active');
         } else if (state.sets.length === 1) {
-            const s = state.sets[0];
+            var s = state.sets[0];
             b1.classList.add(s.aq > s.adv ? 'won' : 'lost');
             b2.classList.add('active');
         } else if (state.sets.length >= 2) {
-            const s1 = state.sets[0];
-            const s2 = state.sets[1];
+            var s1 = state.sets[0];
+            var s2 = state.sets[1];
             b1.classList.add(s1.aq > s1.adv ? 'won' : 'lost');
             b2.classList.add(s2.aq > s2.adv ? 'won' : 'lost');
         }
     }
 
     function renderSetHistory() {
-        const container = document.getElementById('setHistory');
-        container.innerHTML = state.sets.map((s, i) => {
-            const won = s.aq > s.adv;
-            return `<div class="set-result">
-                <span class="set-name">Set ${i + 1}</span>
-                <span class="set-scores ${won ? 'won' : 'lost'}">${s.aq} - ${s.adv}</span>
-                <span class="set-winner ${won ? 'aq' : 'adv'}">${won ? 'Aquilons' : state.advName}</span>
-            </div>`;
+        var container = document.getElementById('setHistory');
+        container.innerHTML = state.sets.map(function(s, i) {
+            var won = s.aq > s.adv;
+            return '<div class="set-result">' +
+                '<span class="set-name">Set ' + (i + 1) + '</span>' +
+                '<span class="set-scores ' + (won ? 'won' : 'lost') + '">' + s.aq + ' - ' + s.adv + '</span>' +
+                '<span class="set-winner ' + (won ? 'aq' : 'adv') + '">' + (won ? 'Aquilons' : state.advName) + '</span>' +
+            '</div>';
         }).join('');
     }
 
     function renderPointLog() {
-        const inner = document.getElementById('pointLogInner');
-        inner.innerHTML = state.pointLog.map((p, i) => {
-            return `<div class="point-pip ${p === 'aq' ? 'aq' : 'adv'}">${p === 'aq' ? 'A' : 'V'}</div>`;
+        var inner = document.getElementById('pointLogInner');
+        inner.innerHTML = state.pointLog.map(function(p) {
+            return '<div class="point-pip ' + (p === 'aq' ? 'aq' : 'adv') + '">' + (p === 'aq' ? 'A' : 'V') + '</div>';
         }).join('');
         inner.scrollTop = inner.scrollHeight;
     }
@@ -810,12 +894,14 @@
     }
 
     function updateDisabledState() {
-        const disabled = !state.matchNum || state.matchDone;
+        var disabled = !state.matchNum || state.matchDone;
         document.getElementById('scoreboard').className = 'scoreboard' + (disabled ? ' disabled' : '');
         document.getElementById('controls').className = 'controls' + (disabled ? ' disabled' : '');
     }
 
-    // Init
+    // ==========================================
+    // INIT
+    // ==========================================
     loadState();
     updateDisabledState();
 </script>
