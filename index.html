@@ -103,6 +103,39 @@
             margin-top: 0.2rem;
         }
 
+        /* NAV */
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            background: var(--bg-light);
+            border-bottom: 1px solid rgba(26,86,184,0.2);
+        }
+
+        .nav a {
+            flex: 1;
+            max-width: 200px;
+            text-align: center;
+            padding: 0.8rem 1rem;
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            text-decoration: none;
+            color: var(--silver-dark);
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .nav a:hover {
+            color: var(--silver-light);
+        }
+
+        .nav a.active {
+            color: var(--blue-light);
+            border-bottom-color: var(--blue);
+        }
+
         /* BILAN */
         .bilan {
             display: flex;
@@ -353,6 +386,11 @@
             <div class="tourney-name">Tournoi CVS 2026</div>
             <div class="tourney-detail">Alma &middot; 7 mars 2026 &middot; 2 sets de 25 pts</div>
         </div>
+    </div>
+
+    <div class="nav">
+        <a href="index.html" class="active">R&eacute;sultats</a>
+        <a href="horaire.html">Horaire</a>
     </div>
 
     <!-- BILAN -->
