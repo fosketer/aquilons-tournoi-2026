@@ -10,20 +10,23 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --gold: #D4A843;
-            --gold-light: #E8C96A;
-            --gold-dark: #B8922E;
-            --black: #0A0A0A;
-            --black-light: #1A1A1A;
-            --black-card: #141414;
-            --gray: #888;
-            --white: #F5F0E8;
+            --blue: #1A56B8;
+            --blue-light: #3A76D8;
+            --blue-dark: #0E3A80;
+            --silver: #A8A9AD;
+            --silver-light: #C8C9CD;
+            --silver-dark: #78797D;
+            --bg: #0C1220;
+            --bg-light: #121C30;
+            --bg-card: #101828;
+            --gray: #8090A8;
+            --white: #EDF0F5;
             --win: #4CAF50;
             --loss: #E53935;
         }
 
         body {
-            background: var(--black);
+            background: var(--bg);
             color: var(--white);
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
@@ -31,8 +34,8 @@
 
         /* HEADER */
         .header {
-            background: linear-gradient(135deg, var(--black) 0%, var(--black-light) 50%, var(--black) 100%);
-            border-bottom: 3px solid var(--gold);
+            background: linear-gradient(135deg, var(--bg) 0%, var(--bg-light) 50%, var(--bg) 100%);
+            border-bottom: 3px solid var(--blue);
             padding: 2rem 1rem 1.5rem;
             text-align: center;
             position: relative;
@@ -46,14 +49,15 @@
             left: -50%;
             width: 200%;
             height: 200%;
-            background: radial-gradient(ellipse at center, rgba(212,168,67,0.06) 0%, transparent 60%);
+            background: radial-gradient(ellipse at center, rgba(26,86,184,0.08) 0%, transparent 60%);
             pointer-events: none;
         }
 
-        .header-eagle {
-            font-size: 3.5rem;
-            margin-bottom: 0.3rem;
-            filter: drop-shadow(0 0 20px rgba(212,168,67,0.3));
+        .header-logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 0.5rem;
+            filter: drop-shadow(0 0 20px rgba(26,86,184,0.4));
         }
 
         .team-name {
@@ -62,7 +66,7 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.15em;
-            background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold-dark) 100%);
+            background: linear-gradient(180deg, var(--silver-light) 0%, var(--silver) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -71,7 +75,7 @@
         .team-sub {
             font-family: 'Oswald', sans-serif;
             font-size: 0.95rem;
-            color: var(--gray);
+            color: var(--blue-light);
             letter-spacing: 0.3em;
             text-transform: uppercase;
             margin-top: 0.2rem;
@@ -80,8 +84,8 @@
         .tournament-info {
             margin-top: 1rem;
             padding: 0.7rem 1.5rem;
-            background: rgba(212,168,67,0.08);
-            border: 1px solid rgba(212,168,67,0.2);
+            background: rgba(26,86,184,0.1);
+            border: 1px solid rgba(26,86,184,0.25);
             border-radius: 8px;
             display: inline-block;
         }
@@ -89,7 +93,7 @@
         .tournament-info .tourney-name {
             font-family: 'Oswald', sans-serif;
             font-size: 1.1rem;
-            color: var(--gold);
+            color: var(--silver-light);
             letter-spacing: 0.1em;
         }
 
@@ -105,8 +109,8 @@
             justify-content: center;
             gap: 1.5rem;
             padding: 1.2rem 1rem;
-            background: var(--black-light);
-            border-bottom: 1px solid rgba(212,168,67,0.15);
+            background: var(--bg-light);
+            border-bottom: 1px solid rgba(26,86,184,0.2);
         }
 
         .bilan-item {
@@ -122,8 +126,8 @@
 
         .bilan-number.wins { color: var(--win); }
         .bilan-number.losses { color: var(--loss); }
-        .bilan-number.sets-w { color: var(--gold-light); }
-        .bilan-number.sets-l { color: var(--gray); }
+        .bilan-number.sets-w { color: var(--blue-light); }
+        .bilan-number.sets-l { color: var(--silver-dark); }
 
         .bilan-label {
             font-size: 0.65rem;
@@ -135,7 +139,7 @@
 
         .bilan-separator {
             width: 1px;
-            background: rgba(212,168,67,0.2);
+            background: rgba(26,86,184,0.25);
             align-self: stretch;
         }
 
@@ -151,7 +155,7 @@
             font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.25em;
-            color: var(--gold);
+            color: var(--blue-light);
             text-align: center;
             margin: 1rem 0;
             display: flex;
@@ -164,12 +168,12 @@
             content: '';
             flex: 1;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(212,168,67,0.3), transparent);
+            background: linear-gradient(90deg, transparent, rgba(26,86,184,0.35), transparent);
         }
 
         .match-card {
-            background: var(--black-card);
-            border: 1px solid rgba(212,168,67,0.12);
+            background: var(--bg-card);
+            border: 1px solid rgba(26,86,184,0.15);
             border-radius: 10px;
             margin-bottom: 0.8rem;
             overflow: hidden;
@@ -177,7 +181,7 @@
         }
 
         .match-card:hover {
-            border-color: rgba(212,168,67,0.3);
+            border-color: rgba(26,86,184,0.4);
         }
 
         .match-card.win {
@@ -189,18 +193,18 @@
         }
 
         .match-card.upcoming {
-            border-left: 3px solid var(--gray);
+            border-left: 3px solid var(--silver-dark);
             opacity: 0.7;
         }
 
         .match-card.live {
-            border-left: 3px solid var(--gold);
+            border-left: 3px solid var(--blue);
             animation: pulse-border 2s infinite;
         }
 
         @keyframes pulse-border {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(212,168,67,0); }
-            50% { box-shadow: 0 0 15px 0 rgba(212,168,67,0.15); }
+            0%, 100% { box-shadow: 0 0 0 0 rgba(26,86,184,0); }
+            50% { box-shadow: 0 0 15px 0 rgba(26,86,184,0.2); }
         }
 
         .match-header {
@@ -213,7 +217,7 @@
         .match-time {
             font-family: 'Oswald', sans-serif;
             font-size: 1rem;
-            color: var(--gold);
+            color: var(--silver-light);
         }
 
         .match-badge {
@@ -236,13 +240,13 @@
         }
 
         .badge-upcoming {
-            background: rgba(136,136,136,0.15);
-            color: var(--gray);
+            background: rgba(168,169,173,0.1);
+            color: var(--silver-dark);
         }
 
         .badge-live {
-            background: rgba(212,168,67,0.15);
-            color: var(--gold);
+            background: rgba(26,86,184,0.2);
+            color: var(--blue-light);
             animation: pulse-text 1.5s infinite;
         }
 
@@ -275,7 +279,7 @@
         }
 
         .team-label.is-aquilon {
-            color: var(--gold-light);
+            color: var(--blue-light);
             font-weight: 600;
         }
 
@@ -294,12 +298,12 @@
         }
 
         .set-score.won {
-            color: var(--gold-light);
+            color: var(--blue-light);
             font-weight: 700;
         }
 
         .set-score.lost {
-            color: var(--gray);
+            color: var(--silver-dark);
         }
 
         .match-location {
@@ -311,11 +315,11 @@
         .match-location a {
             color: var(--gray);
             text-decoration: none;
-            border-bottom: 1px dotted rgba(136,136,136,0.4);
+            border-bottom: 1px dotted rgba(128,144,168,0.4);
         }
 
         .match-location a:hover {
-            color: var(--gold);
+            color: var(--blue-light);
         }
 
         /* FOOTER */
@@ -323,8 +327,8 @@
             text-align: center;
             padding: 2rem 1rem;
             font-size: 0.7rem;
-            color: rgba(136,136,136,0.5);
-            border-top: 1px solid rgba(212,168,67,0.08);
+            color: rgba(128,144,168,0.4);
+            border-top: 1px solid rgba(26,86,184,0.1);
             margin-top: 1rem;
         }
 
@@ -333,7 +337,7 @@
             padding: 0.8rem;
             font-size: 0.7rem;
             color: var(--gray);
-            background: rgba(212,168,67,0.04);
+            background: rgba(26,86,184,0.06);
             border-radius: 6px;
             margin: 1rem 0;
         }
@@ -342,7 +346,7 @@
 <body>
 
     <div class="header">
-        <div class="header-eagle">&#129413;</div>
+        <img src="logo.jpg" alt="Aquilons Br&eacute;beuf" class="header-logo">
         <div class="team-name">Aquilons</div>
         <div class="team-sub">Jean de Br&eacute;beuf &middot; Benjamin D2</div>
         <div class="tournament-info">
@@ -354,22 +358,22 @@
     <!-- BILAN -->
     <div class="bilan">
         <div class="bilan-item">
-            <div class="bilan-number wins" id="wins">0</div>
+            <div class="bilan-number wins">0</div>
             <div class="bilan-label">Victoires</div>
         </div>
         <div class="bilan-separator"></div>
         <div class="bilan-item">
-            <div class="bilan-number losses" id="losses">0</div>
+            <div class="bilan-number losses">0</div>
             <div class="bilan-label">D&eacute;faites</div>
         </div>
         <div class="bilan-separator"></div>
         <div class="bilan-item">
-            <div class="bilan-number sets-w" id="sets-w">0</div>
+            <div class="bilan-number sets-w">0</div>
             <div class="bilan-label">Sets gagn&eacute;s</div>
         </div>
         <div class="bilan-separator"></div>
         <div class="bilan-item">
-            <div class="bilan-number sets-l" id="sets-l">0</div>
+            <div class="bilan-number sets-l">0</div>
             <div class="bilan-label">Sets perdus</div>
         </div>
     </div>
@@ -572,8 +576,7 @@
     </div>
 
     <div class="footer">
-        Aquilons &middot; Jean de Br&eacute;beuf &middot; Tournoi CVS 2026<br>
-        Go Aquilons! &#129413;&#127952;
+        Aquilons &middot; Jean de Br&eacute;beuf &middot; Tournoi CVS 2026
     </div>
 
 </body>
