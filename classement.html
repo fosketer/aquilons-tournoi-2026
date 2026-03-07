@@ -111,19 +111,27 @@ function csvUrl(gid) {
 }
 
 function parseCSV(text) {
-    var lines = [], current = '', inQuote = false;
+    var lines = [], row = [], field = '', inQuote = false;
     for (var i = 0; i < text.length; i++) {
         var c = text[i];
-        if (c === '"') { inQuote = !inQuote; continue; }
-        if (c === '\n' && !inQuote) { lines.push(current.split(',')); current = ''; continue; }
-        if (c === '\r') continue;
-        current += c;
+        if (c === '"') {
+            if (inQuote && i + 1 < text.length && text[i + 1] === '"') { field += '"'; i++; }
+            else { inQuote = !inQuote; }
+        } else if (c === ',' && !inQuote) {
+            row.push(field); field = '';
+        } else if (c === '\n' && !inQuote) {
+            row.push(field); lines.push(row); row = []; field = '';
+        } else if (c !== '\r') {
+            field += c;
+        }
     }
-    if (current) lines.push(current.split(','));
+    if (field || row.length) { row.push(field); lines.push(row); }
     return lines;
 }
 
 function parsePoolData(rows, pools) {
+    // Fixed column positions in the Google Sheets CSV (after proper CSV parsing)
+    var SG=16, SP=17, PP=18, PC=19, SGSP=20, PPPC=21, RG=22;
     var data = {};
     pools.forEach(function(pool) {
         data[pool.name] = [];
@@ -132,35 +140,12 @@ function parsePoolData(rows, pools) {
             for (var r = 0; r < rows.length; r++) {
                 var row = rows[r];
                 if (row[1] && row[1].trim() === String(teamId)) {
-                    var entry = { id: teamId, name: team, sg: null, sp: null, pp: null, pc: null, sgsp: null, pppc: null, rg: null };
-                    var headerRow = null;
-                    for (var h = r - 1; h >= Math.max(0, r - 5); h--) {
-                        if (rows[h]) {
-                            var joined = rows[h].join(',');
-                            if (joined.indexOf('SG') >= 0 && joined.indexOf('SP') >= 0) { headerRow = rows[h]; break; }
-                        }
-                    }
-                    if (headerRow) {
-                        var sgCol = -1, spCol = -1, ppCol = -1, pcCol = -1, sgspCol = -1, pppcCol = -1, rgCol = -1;
-                        for (var c = 0; c < headerRow.length; c++) {
-                            var val = headerRow[c].trim();
-                            if (val === 'SG' && sgCol === -1) sgCol = c;
-                            else if (val === 'SP' && spCol === -1) spCol = c;
-                            else if (val === 'PP' && ppCol === -1) ppCol = c;
-                            else if (val === 'PC' && pcCol === -1) pcCol = c;
-                            else if (val === 'SG/SP') sgspCol = c;
-                            else if (val === 'PP/PC') pppcCol = c;
-                            else if (val === 'RG') rgCol = c;
-                        }
-                        if (sgCol >= 0 && row[sgCol]) entry.sg = row[sgCol].trim() || null;
-                        if (spCol >= 0 && row[spCol]) entry.sp = row[spCol].trim() || null;
-                        if (ppCol >= 0 && row[ppCol]) entry.pp = row[ppCol].trim() || null;
-                        if (pcCol >= 0 && row[pcCol]) entry.pc = row[pcCol].trim() || null;
-                        if (sgspCol >= 0 && row[sgspCol]) entry.sgsp = row[sgspCol].trim() || null;
-                        if (pppcCol >= 0 && row[pppcCol]) entry.pppc = row[pppcCol].trim() || null;
-                        if (rgCol >= 0 && row[rgCol]) entry.rg = row[rgCol].trim() || null;
-                    }
-                    data[pool.name].push(entry);
+                    var v = function(c) { return row[c] ? row[c].trim() : null; };
+                    data[pool.name].push({
+                        id: teamId, name: team,
+                        sg: v(SG), sp: v(SP), pp: v(PP), pc: v(PC),
+                        sgsp: v(SGSP), pppc: v(PPPC), rg: v(RG) || null
+                    });
                     break;
                 }
             }
@@ -168,14 +153,13 @@ function parsePoolData(rows, pools) {
                 data[pool.name].push({ id: teamId, name: team, sg:null, sp:null, pp:null, pc:null, sgsp:null, pppc:null, rg:null });
             }
         });
-        // Sort: by RG if available, else by SG desc then PP/PC desc
+        // Sort: by RG if available, else by SG desc then PP desc
         data[pool.name].sort(function(a, b) {
             if (a.rg && b.rg) return parseInt(a.rg) - parseInt(b.rg);
             var sgA = parseInt(a.sg) || 0, sgB = parseInt(b.sg) || 0;
             if (sgA !== sgB) return sgB - sgA;
-            var pa = parseFloat((a.pppc || '0').replace(',', '.')) || 0;
-            var pb = parseFloat((b.pppc || '0').replace(',', '.')) || 0;
-            return pb - pa;
+            var ppa = parseInt(a.pp) || 0, ppb = parseInt(b.pp) || 0;
+            return ppb - ppa;
         });
     });
     return data;
