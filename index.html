@@ -487,6 +487,7 @@
 
         .badge-win { background: rgba(76,175,80,0.15); color: var(--win); }
         .badge-loss { background: rgba(229,57,53,0.15); color: var(--loss); }
+        .badge-draw { background: rgba(255,193,7,0.15); color: #FFC107; }
         .badge-upcoming { background: rgba(168,169,173,0.1); color: var(--silver-dark); }
 
         .badge-live {
@@ -803,6 +804,11 @@
         </div>
         <div class="bilan-separator"></div>
         <div class="bilan-item">
+            <div class="bilan-number" id="bilanDraws" style="color:#FFC107">-</div>
+            <div class="bilan-label">&Eacute;galit&eacute;s</div>
+        </div>
+        <div class="bilan-separator"></div>
+        <div class="bilan-item">
             <div class="bilan-number losses" id="bilanLosses">-</div>
             <div class="bilan-label">D&eacute;faites</div>
         </div>
@@ -1018,6 +1024,7 @@
         var statusMap = {
             win:  { cls: 'win', badge: 'badge-win', text: 'Victoire' },
             loss: { cls: 'loss', badge: 'badge-loss', text: 'D\u00e9faite' },
+            draw: { cls: 'draw', badge: 'badge-draw', text: '\u00c9galit\u00e9' },
             live: { cls: 'live', badge: 'badge-live', text: '\u25CF En cours' }
         };
         var defaultSt = { cls: 'upcoming', badge: 'badge-upcoming', text: '\u00c0 venir' };
@@ -1105,14 +1112,16 @@
     }
 
     function updateBilan(matchs) {
-        var wins = 0, losses = 0, setsW = 0, setsL = 0;
+        var wins = 0, losses = 0, draws = 0, setsW = 0, setsL = 0;
         matchs.forEach(function(m) {
             if (m.statut === 'win') wins++;
             if (m.statut === 'loss') losses++;
+            if (m.statut === 'draw') draws++;
             if (m.aq_set1 != null && m.adv_set1 != null) { m.aq_set1 > m.adv_set1 ? setsW++ : setsL++; }
             if (m.aq_set2 != null && m.adv_set2 != null) { m.aq_set2 > m.adv_set2 ? setsW++ : setsL++; }
         });
         document.getElementById('bilanWins').textContent = wins;
+        document.getElementById('bilanDraws').textContent = draws;
         document.getElementById('bilanLosses').textContent = losses;
         document.getElementById('bilanSetsW').textContent = setsW;
         document.getElementById('bilanSetsL').textContent = setsL;
@@ -1246,7 +1255,8 @@
         };
         if (sk.matchDone) {
             var setsWon = sk.sets.filter(function(s) { return s.aq > s.adv; }).length;
-            updates.statut = setsWon > sk.sets.length - setsWon ? 'win' : 'loss';
+            var setsLost = sk.sets.length - setsWon;
+            updates.statut = setsWon > setsLost ? 'win' : setsWon < setsLost ? 'loss' : 'draw';
             updates.set_courant = 0;
         } else {
             updates.statut = 'live';
@@ -1421,7 +1431,7 @@
         var current = sel.value;
         sel.innerHTML = '<option value="">-- Marquer un match --</option>';
         matchs.forEach(function(m) {
-            if (m.statut === 'win' || m.statut === 'loss') return;
+            if (m.statut === 'win' || m.statut === 'loss' || m.statut === 'draw') return;
             var opt = document.createElement('option');
             opt.value = m.numero;
             opt.dataset.adv = m.adversaire;
