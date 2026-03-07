@@ -450,6 +450,15 @@
         .sync-status.connected { color: var(--win); }
         .sync-status.error { color: var(--loss); }
 
+        .adv-info {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.6rem;
+            color: var(--gray);
+            text-transform: none;
+            letter-spacing: 0.02em;
+            margin-top: 0.1rem;
+        }
+
         /* FOOTER */
         .footer {
             text-align: center;
@@ -517,6 +526,7 @@
         </div>
         <div class="score-side adversaire" onclick="addPoint('adv')">
             <div class="score-team-name"><span id="advName">Adversaire</span> <span class="service-dot" id="serviceAdv"></span></div>
+            <div class="adv-info" id="advInfo"></div>
             <div class="score-points" id="scoreAdv">0</div>
             <div class="score-tap-hint">Toucher = +1</div>
         </div>
@@ -556,6 +566,13 @@
     var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     var TOURNOI_ID = 'a0000000-0000-0000-0000-000000000001';
     var matchDbId = null;
+    var adversairesMap = {};
+
+    sb.from('adversaires').select('nom_tournoi,region_rseq,rang_regional')
+        .eq('tournoi_id', TOURNOI_ID)
+        .then(function(res) {
+            if (res.data) res.data.forEach(function(a) { adversairesMap[a.nom_tournoi] = a; });
+        });
 
     function setSyncStatus(text, cls) {
         var el = document.getElementById('syncStatus');
@@ -640,10 +657,21 @@
     // ==========================================
     // UI
     // ==========================================
+    function updateAdvInfo(nom) {
+        var el = document.getElementById('advInfo');
+        var a = adversairesMap[nom];
+        if (!a) { el.textContent = ''; return; }
+        var parts = [];
+        if (a.region_rseq) parts.push(a.region_rseq);
+        if (a.rang_regional) parts.push(a.rang_regional + (a.rang_regional === 1 ? 'er' : 'e') + ' r\u00e9gional');
+        el.textContent = parts.join(' \u00b7 ');
+    }
+
     function applyState() {
         if (state.matchNum) {
             document.getElementById('matchSelect').value = state.matchNum;
             document.getElementById('advName').textContent = state.advName;
+            updateAdvInfo(state.advName);
         }
         document.getElementById('scoreAq').textContent = state.aqScore;
         document.getElementById('scoreAdv').textContent = state.advScore;
@@ -676,6 +704,7 @@
         };
 
         document.getElementById('advName').textContent = state.advName;
+        updateAdvInfo(state.advName);
         document.getElementById('scoreAq').textContent = '0';
         document.getElementById('scoreAdv').textContent = '0';
         document.getElementById('setHistory').innerHTML = '';

@@ -355,6 +355,13 @@
             color: var(--blue-light);
         }
 
+        .team-info {
+            font-size: 0.65rem;
+            color: var(--gray);
+            margin-left: 0.3rem;
+            font-weight: 400;
+        }
+
         .match-live-score {
             padding: 0 1rem 0.5rem;
             font-size: 0.8rem;
@@ -442,6 +449,14 @@
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const TOURNOI_ID = 'a0000000-0000-0000-0000-000000000001';
 
+    let adversairesMap = {};
+
+    async function loadAdversaires() {
+        const { data } = await sb.from('adversaires').select('nom_tournoi,region_rseq,rang_regional').eq('tournoi_id', TOURNOI_ID);
+        if (!data) return;
+        data.forEach(function(a) { adversairesMap[a.nom_tournoi] = a; });
+    }
+
     async function loadMatchs() {
         const { data } = await sb.from('matchs').select('*').eq('tournoi_id', TOURNOI_ID).order('numero');
         if (!data) return;
@@ -453,6 +468,15 @@
         if (aqScore == null) return { aq: '-', adv: '-', aqCls: '', advCls: '' };
         const won = aqScore > advScore;
         return { aq: aqScore, adv: advScore, aqCls: won ? 'won' : 'lost', advCls: won ? 'lost' : 'won' };
+    }
+
+    function advInfo(nom) {
+        var a = adversairesMap[nom];
+        if (!a) return '';
+        var parts = [];
+        if (a.region_rseq) parts.push(a.region_rseq);
+        if (a.rang_regional) parts.push(a.rang_regional + (a.rang_regional === 1 ? 'er' : 'e') + ' r\u00e9gional');
+        return parts.length ? '<span class="team-info"> \u2014 ' + parts.join(' \u00b7 ') + '</span>' : '';
     }
 
     function renderMatchs(matchs) {
@@ -488,7 +512,7 @@
                         '</div>' +
                     '</div>' +
                     '<div class="team-row">' +
-                        '<span class="team-label">' + m.adversaire + '</span>' +
+                        '<span class="team-label">' + m.adversaire + advInfo(m.adversaire) + '</span>' +
                         '<div class="set-scores">' +
                             '<span class="set-score ' + s1.advCls + '">' + s1.adv + '</span>' +
                             '<span class="set-score ' + s2.advCls + '">' + s2.adv + '</span>' +
@@ -531,7 +555,7 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'matchs' }, function() { loadMatchs(); })
         .subscribe();
 
-    loadMatchs();
+    loadAdversaires().then(function() { loadMatchs(); });
 </script>
 
 </body>
