@@ -314,22 +314,38 @@
         }
     ];
 
-    // Hardcoded regions (not available on S1)
-    var STATIC_REGIONS = [
-        {
-            id: 'qca',
-            name: 'QCA (Qu\u00e9bec-Chaudi\u00e8re-Appalaches)',
-            info: 'Benjamin F\u00e9minin D3 \u2014 Section Juv. Notre-Dame',
-            highlight: 'Jean-de-Br\u00e9beuf 1',
-            cols: ['#', '\u00c9quipe', 'MJ', 'SG', 'SP', 'PP', 'PC', 'Rang'],
-            teams: [
-                ['1', 'Juv. Notre-Dame 1', 3, 9, 6, 174, 150, 1],
-                ['2', 'E.S. Veilleux', 3, 8, 5, 169, 162, 2],
-                ['3', 'Jean-de-Br\u00e9beuf 1', 3, 3, 4, 135, 150, 3],
-                ['4', 'Aubier 1', 3, 8, 2, 152, 168, 4]
-            ]
-        }
-    ];
+    // QCA standings from Google Sheets (not available on RSEQ S1)
+    var QCA_SHEET_ID = '1J4ttjcJRPh2bift-6on67t3qp4Tyx_TxPrjJRF3t_3Q';
+    var QCA_CSV_URL = 'https://docs.google.com/spreadsheets/d/' + QCA_SHEET_ID + '/export?format=csv';
+
+    function fetchQCAStandings() {
+        return fetch(QCA_CSV_URL)
+            .then(function(r) { return r.text(); })
+            .then(function(csv) {
+                var lines = csv.split('\n');
+                var region = {
+                    id: 'qca',
+                    name: 'QCA (Qu\u00e9bec-Chaudi\u00e8re-Appalaches)',
+                    info: 'Benjamin F\u00e9minin \u2014 Classement g\u00e9n\u00e9ral',
+                    highlight: 'Jean-de-Br\u00e9beuf 1',
+                    cols: ['Rang', '\u00c9quipe', 'T3', 'T4', 'T5', 'Total'],
+                    teams: []
+                };
+                // Data starts at line index 6 (after headers)
+                for (var i = 6; i < lines.length; i++) {
+                    var cols = lines[i].split(',');
+                    var rang = (cols[0] || '').trim();
+                    var equipe = (cols[1] || '').trim();
+                    if (!rang || !equipe) continue;
+                    var t3 = (cols[4] || '').trim() || '-';
+                    var t4 = (cols[7] || '').trim() || '-';
+                    var t5 = (cols[10] || '').trim() || '-';
+                    var total = (cols[11] || '').trim() || '-';
+                    region.teams.push([rang, equipe, t3, t4, t5, total]);
+                }
+                return region;
+            });
+    }
 
     var regions = [];
 
@@ -390,10 +406,6 @@
         return region;
     }
 
-    function buildRegionStatic(cfg) {
-        return cfg; // already in the right format
-    }
-
     function renderRegions() {
         var tabsEl = document.getElementById('regionTabs');
         var sectionsEl = document.getElementById('regionSections');
@@ -445,28 +457,30 @@
     }
 
     async function loadRegions() {
-        // Add static regions first (QCA)
-        STATIC_REGIONS.forEach(function(cfg) {
-            regions.push(buildRegionStatic(cfg));
+        // Fetch QCA from Google Sheets + RSEQ leagues in parallel
+        var qcaPromise = fetchQCAStandings().catch(function() { return null; });
+        var rseqPromises = RSEQ_LEAGUES.map(function(cfg) {
+            return fetchLeagueDiffusion(cfg.leagueId).then(function(data) {
+                return { cfg: cfg, data: data };
+            }).catch(function() { return null; });
         });
 
-        // Fetch all RSEQ leagues in parallel
-        var results = await Promise.allSettled(
-            RSEQ_LEAGUES.map(function(cfg) {
-                return fetchLeagueDiffusion(cfg.leagueId).then(function(data) {
-                    return { cfg: cfg, data: data };
-                });
-            })
-        );
+        var allResults = await Promise.all([qcaPromise].concat(rseqPromises));
 
-        results.forEach(function(r) {
-            if (r.status === 'fulfilled') {
-                var region = buildRegionFromAPI(r.value.cfg, r.value.data);
+        // QCA first
+        if (allResults[0] && allResults[0].teams.length > 0) {
+            regions.push(allResults[0]);
+        }
+
+        // RSEQ leagues
+        for (var i = 1; i < allResults.length; i++) {
+            if (allResults[i]) {
+                var region = buildRegionFromAPI(allResults[i].cfg, allResults[i].data);
                 if (region.teams.length > 0) {
                     regions.push(region);
                 }
             }
-        });
+        }
 
         renderRegions();
     }
