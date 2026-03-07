@@ -539,18 +539,49 @@
         }
 
         .match-location {
-            padding: 0 1rem 0.6rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem 0.7rem;
             font-size: 0.7rem;
             color: var(--gray);
         }
 
-        .match-location a {
-            color: var(--gray);
-            text-decoration: none;
-            border-bottom: 1px dotted rgba(128,144,168,0.4);
+        .match-location .pin { font-size: 0.85rem; flex-shrink: 0; margin-top: 0.05rem; }
+
+        .match-location .loc-info { flex: 1; }
+
+        .match-location .loc-venue {
+            font-size: 0.8rem;
+            color: var(--silver-light);
+            font-weight: 500;
         }
 
-        .match-location a:hover { color: var(--blue-light); }
+        .match-location .loc-addr {
+            font-size: 0.7rem;
+            color: var(--gray);
+            margin-top: 0.1rem;
+        }
+
+        .match-location .loc-map {
+            display: inline-block;
+            margin-top: 0.3rem;
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--blue-light);
+            text-decoration: none;
+            padding: 0.2rem 0.5rem;
+            border: 1px solid rgba(58,118,216,0.3);
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .match-location .loc-map:hover {
+            background: rgba(26,86,184,0.15);
+            border-color: var(--blue-light);
+        }
 
         .team-info {
             font-size: 0.65rem;
@@ -730,6 +761,12 @@
         updateBilan(res.data);
     }
 
+    var venueAddresses = {
+        'Centre Mario-Tremblay': '605 Boul. Saint-Luc O, Alma',
+        '\u00c9cole Jean-Gauthier': '441 rue Joseph-W.-Fleury, Alma',
+        'Camille-Lavoie': '500 Av. des M\u00e9tiers, Alma'
+    };
+
     function scoreCell(aqScore, advScore) {
         if (aqScore == null) return { aq: '-', adv: '-', aqCls: '', advCls: '' };
         var won = aqScore > advScore;
@@ -788,7 +825,14 @@
                     '</div>' +
                 '</div></div>' +
                 liveInfo +
-                '<div class="match-location">' + m.terrain + ' &middot; <a href="' + m.lieu_maps_url + '" target="_blank">' + m.lieu_nom + '</a></div>' +
+                '<div class="match-location">' +
+                    '<span class="pin">&#128205;</span>' +
+                    '<div class="loc-info">' +
+                        '<div class="loc-venue">' + m.lieu_nom + ' &mdash; ' + m.terrain + '</div>' +
+                        '<div class="loc-addr">' + (venueAddresses[m.lieu_nom] || '') + '</div>' +
+                        '<a href="' + m.lieu_maps_url + '" target="_blank" class="loc-map">Ouvrir dans Maps</a>' +
+                    '</div>' +
+                '</div>' +
             '</div>';
         }).join('');
 
