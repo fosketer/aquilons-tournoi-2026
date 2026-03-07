@@ -664,13 +664,6 @@
         <div class="sk-match-select">
             <select id="skMatchSelect" onchange="skSelectMatch()">
                 <option value="">-- Marquer un match --</option>
-                <option value="1" data-adv="Husky JDN" data-time="9h30">Match 1 - 9h30 vs Husky JDN</option>
-                <option value="2" data-adv="Bleu et Or" data-time="10h30">Match 2 - 10h30 vs Bleu et Or</option>
-                <option value="3" data-adv="Express U14" data-time="11h30">Match 3 - 11h30 vs Express U14</option>
-                <option value="4" data-adv="Les Condors" data-time="14h30">Match 4 - 14h30 vs Les Condors</option>
-                <option value="5" data-adv="Bleu et Or" data-time="16h30">Match 5 - 16h30 vs Bleu et Or</option>
-                <option value="6" data-adv="Tigres d'Am&eacute;" data-time="17h30">Match 6 - 17h30 vs Tigres d'Am&eacute;</option>
-                <option value="7" data-adv="Husky KS" data-time="19h30">Match 7 - 19h30 vs Husky KS</option>
             </select>
         </div>
         <div class="sk-panel" id="skPanel">
@@ -758,6 +751,7 @@
         if (!res.data) return;
         renderMatchs(res.data);
         updateBilan(res.data);
+        buildMatchDropdown(res.data);
     }
 
     var venueAddresses = {
@@ -781,7 +775,15 @@
         };
         var defaultSt = { cls: 'upcoming', badge: 'badge-upcoming', text: '\u00c0 venir' };
 
+        var hasElim = matchs.some(function(m) { return m.match_externe; });
+        var elimSepShown = false;
+
         container.innerHTML = matchs.map(function(m) {
+            var sep = '';
+            if (!elimSepShown && m.match_externe) {
+                elimSepShown = true;
+                sep = '<div class="section-title" style="margin:1.5rem 0 1rem">\u00c9liminatoires</div>';
+            }
             var st = statusMap[m.statut] || defaultSt;
             var s1 = scoreCell(m.aq_set1, m.adv_set1);
             var s2 = scoreCell(m.aq_set2, m.adv_set2);
@@ -800,7 +802,7 @@
                 liveInfo = '<div class="match-live-score">Set ' + m.set_courant + ' en cours</div>';
             }
 
-            return '<div class="match-card ' + st.cls + '">' +
+            return sep + '<div class="match-card ' + st.cls + '">' +
                 '<div class="match-header">' +
                     '<span class="match-time">' + m.heure + '</span>' +
                     '<span class="match-badge ' + st.badge + '">' + st.text + '</span>' +
@@ -1157,6 +1159,216 @@
     }
 
     // ==========================================
+    // DYNAMIC MATCH DROPDOWN
+    // ==========================================
+    function buildMatchDropdown(matchs) {
+        var sel = document.getElementById('skMatchSelect');
+        var current = sel.value;
+        sel.innerHTML = '<option value="">-- Marquer un match --</option>';
+        matchs.forEach(function(m) {
+            var opt = document.createElement('option');
+            opt.value = m.numero;
+            opt.dataset.adv = m.adversaire;
+            opt.dataset.time = m.heure;
+            var label = 'Match ' + m.numero + ' - ' + m.heure + ' vs ' + m.adversaire;
+            if (m.match_externe) label += ' (M' + m.match_externe + ')';
+            opt.textContent = label;
+            sel.appendChild(opt);
+        });
+        if (current) sel.value = current;
+    }
+
+    // ==========================================
+    // BRACKET SCANNER (Day 2 elimination matches)
+    // ==========================================
+    var SHEET_ID = '1TGb1tBMg2CB9lGfWd3uqxHAcxBW81zw4gSfdKCWH7A0';
+    var ELIM_SHEETS = [
+        { gid: '258735679', tier: 'Tier 1' },
+        { gid: '1190283882', tier: 'Tier 2' }
+    ];
+
+    // Venue mapping for elimination terrains
+    var elimVenues = {
+        '5': { nom: 'Centre Mario-Tremblay', url: 'https://www.google.com/maps/place/605+Boulevard+Saint-Luc+O,+Alma,+QC' },
+        '6': { nom: 'Centre Mario-Tremblay', url: 'https://www.google.com/maps/place/605+Boulevard+Saint-Luc+O,+Alma,+QC' },
+        '7': { nom: 'Camille-Lavoie', url: 'https://www.google.com/maps/place/500+Avenue+des+M%C3%A9tiers,+Alma,+QC' },
+        '8': { nom: 'Camille-Lavoie', url: 'https://www.google.com/maps/place/500+Avenue+des+M%C3%A9tiers,+Alma,+QC' }
+    };
+
+    function parseCSV(text) {
+        var lines = [];
+        var current = '';
+        var inQuote = false;
+        for (var i = 0; i < text.length; i++) {
+            var c = text[i];
+            if (c === '"') { inQuote = !inQuote; continue; }
+            if (c === '\n' && !inQuote) { lines.push(current.split(',')); current = ''; continue; }
+            if (c === '\r') continue;
+            current += c;
+        }
+        if (current) lines.push(current.split(','));
+        return lines;
+    }
+
+    function scanBracketForAquilon(rows) {
+        // Find all cells and build a grid
+        var matches = []; // discovered matches with Aquilon
+
+        // Step 1: Find all "Match N" cells
+        var matchCells = [];
+        for (var r = 0; r < rows.length; r++) {
+            for (var c = 0; c < rows[r].length; c++) {
+                var val = rows[r][c].trim();
+                var mm = val.match(/^Match (\d+)$/);
+                if (mm) {
+                    matchCells.push({ row: r, col: c, num: parseInt(mm[1]) });
+                }
+            }
+        }
+
+        // Step 2: For each match, find the two teams, time, and terrain
+        matchCells.forEach(function(mc) {
+            var team1 = null, team2 = null, time = null, terrain = null;
+
+            // Scan nearby rows (±6) in nearby columns (±3) for teams, time, terrain
+            for (var r = Math.max(0, mc.row - 6); r <= Math.min(rows.length - 1, mc.row + 6); r++) {
+                for (var c = Math.max(0, mc.col - 3); c <= Math.min((rows[r] || []).length - 1, mc.col + 3); c++) {
+                    var v = (rows[r][c] || '').trim();
+                    if (!v) continue;
+
+                    // Time pattern
+                    if (!time && /^\d{1,2}h\d{2}$/.test(v)) {
+                        time = v;
+                        continue;
+                    }
+
+                    // Terrain pattern
+                    if (!terrain && /^Terrain \d+$/.test(v)) {
+                        terrain = v;
+                        continue;
+                    }
+                }
+            }
+
+            // Find teams: look for text cells near the match that are team names
+            // Teams are typically above and below the match cell in a bracket pattern
+            // Scan the same column area for team-like cells
+            var teamCandidates = [];
+            for (var r = Math.max(0, mc.row - 4); r <= Math.min(rows.length - 1, mc.row + 4); r++) {
+                for (var c = Math.max(0, mc.col - 3); c <= Math.min((rows[r] || []).length - 1, mc.col + 3); c++) {
+                    var v = (rows[r][c] || '').trim();
+                    if (!v) continue;
+                    // Skip known non-team patterns
+                    if (/^(Match|Terrain|GM|PM|\d{1,2}h\d{2}|Tournoi|Benjamin|Alma|Huiti|Quart|Demi|Finale|6-7)/.test(v)) continue;
+                    if (/^$/.test(v)) continue;
+                    // Must contain letters (team names have letters)
+                    if (/[a-zA-Z\u00C0-\u017F]/.test(v) && v.length > 1) {
+                        teamCandidates.push({ row: r, col: c, name: v });
+                    }
+                }
+            }
+
+            // Remove duplicates and sort by distance from match row
+            var seen = {};
+            teamCandidates = teamCandidates.filter(function(t) {
+                if (seen[t.name]) return false;
+                seen[t.name] = true;
+                return true;
+            }).sort(function(a, b) {
+                return Math.abs(a.row - mc.row) - Math.abs(b.row - mc.row);
+            });
+
+            // Take the two closest team candidates
+            if (teamCandidates.length >= 2) {
+                team1 = teamCandidates[0].name;
+                team2 = teamCandidates[1].name;
+            } else if (teamCandidates.length === 1) {
+                team1 = teamCandidates[0].name;
+            }
+
+            // Check if Aquilon is involved
+            var hasAquilon = false;
+            var opponent = null;
+            [team1, team2].forEach(function(t) {
+                if (t && /aquilon/i.test(t)) { hasAquilon = true; }
+            });
+
+            if (hasAquilon) {
+                if (team1 && !/aquilon/i.test(team1)) opponent = team1;
+                else if (team2 && !/aquilon/i.test(team2)) opponent = team2;
+                matches.push({
+                    matchExterne: mc.num,
+                    adversaire: opponent || 'TBD',
+                    heure: time || '',
+                    terrain: terrain || ''
+                });
+            }
+        });
+
+        return matches;
+    }
+
+    async function scanBrackets() {
+        var allFound = [];
+
+        for (var i = 0; i < ELIM_SHEETS.length; i++) {
+            var sheet = ELIM_SHEETS[i];
+            try {
+                var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + sheet.gid;
+                var res = await fetch(url);
+                var text = await res.text();
+                var rows = parseCSV(text);
+                var found = scanBracketForAquilon(rows);
+                found.forEach(function(f) { f.tier = sheet.tier; });
+                allFound = allFound.concat(found);
+            } catch(e) {
+                console.error('Bracket scan error for ' + sheet.tier, e);
+            }
+        }
+
+        if (allFound.length === 0) return;
+
+        // Check existing matches in Supabase
+        var existing = await sb.from('matchs').select('match_externe,numero')
+            .eq('tournoi_id', TOURNOI_ID)
+            .not('match_externe', 'is', null);
+        var existingNums = {};
+        if (existing.data) existing.data.forEach(function(m) { existingNums[m.match_externe] = m.numero; });
+
+        // Get max numero for new matches
+        var allMatchs = await sb.from('matchs').select('numero').eq('tournoi_id', TOURNOI_ID).order('numero', { ascending: false }).limit(1);
+        var nextNum = (allMatchs.data && allMatchs.data[0]) ? allMatchs.data[0].numero + 1 : 8;
+
+        for (var j = 0; j < allFound.length; j++) {
+            var m = allFound[j];
+            if (existingNums[m.matchExterne]) {
+                // Update adversaire if changed
+                await sb.from('matchs').update({ adversaire: m.adversaire, heure: m.heure, terrain: m.terrain })
+                    .eq('tournoi_id', TOURNOI_ID)
+                    .eq('match_externe', m.matchExterne);
+            } else {
+                // Create new match
+                var terrainNum = (m.terrain.match(/\d+/) || [''])[0];
+                var venue = elimVenues[terrainNum] || { nom: 'TBD', url: '' };
+                await sb.from('matchs').insert({
+                    tournoi_id: TOURNOI_ID,
+                    numero: nextNum++,
+                    heure: m.heure,
+                    adversaire: m.adversaire,
+                    terrain: m.terrain,
+                    lieu_nom: venue.nom,
+                    lieu_maps_url: venue.url,
+                    statut: 'upcoming',
+                    match_externe: m.matchExterne
+                });
+            }
+        }
+
+        // Reload matches to show new ones
+        loadMatchs();
+    }
+
+    // ==========================================
     // REALTIME
     // ==========================================
     sb.channel('matchs-realtime')
@@ -1166,7 +1378,6 @@
     // ==========================================
     // INIT
     // ==========================================
-    // Show scorekeeper if URL has ?score param
     var urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('score')) {
         document.getElementById('scorekeeper').classList.add('show');
@@ -1175,6 +1386,11 @@
     loadAdversaires().then(function() {
         loadMatchs();
         skLoad();
+        // Scan brackets every 2 minutes (only for scorekeeper mode)
+        if (urlParams.has('score')) {
+            scanBrackets();
+            setInterval(scanBrackets, 120000);
+        }
     });
 </script>
 
