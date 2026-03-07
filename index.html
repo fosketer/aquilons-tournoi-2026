@@ -1073,7 +1073,12 @@
         } else if (played > 0) {
             updateEl.textContent = played + '/' + matchs.length + ' matchs jou\u00e9s';
         } else {
-            updateEl.textContent = 'En attente du premier match';
+            var nextMatch = matchs.find(function(m) { return m.statut === 'upcoming'; });
+            if (nextMatch) {
+                updateEl.textContent = 'Prochain match : ' + nextMatch.heure + ' vs ' + nextMatch.adversaire;
+            } else {
+                updateEl.textContent = 'Tous les matchs sont termin\u00e9s';
+            }
         }
     }
 
