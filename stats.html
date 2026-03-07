@@ -181,6 +181,14 @@
 
         .region-section { display: none; }
         .region-section.show { display: block; }
+
+        .source-info {
+            margin-top: 1.5rem; padding-top: 0.8rem;
+            border-top: 1px solid rgba(26,86,184,0.15);
+            font-size: 0.65rem; color: var(--silver-dark); text-align: center;
+        }
+        .source-info a { color: var(--gray); text-decoration: none; }
+        .source-info a:hover { color: var(--blue-light); }
     </style>
 </head>
 <body>
@@ -227,6 +235,10 @@
 
         <div class="region-tabs" id="regionTabs"></div>
         <div id="regionSections"></div>
+
+        <div class="source-info">
+            Sources : <a href="https://diffusion.s1.rseq.ca/" target="_blank">RSEQ S1</a> &amp; <a href="https://rseqqca.com/volleyball/secondaire/horaire" target="_blank">RSEQ-QCA</a>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
