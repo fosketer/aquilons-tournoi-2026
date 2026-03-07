@@ -1655,8 +1655,7 @@
     }
 
     loadAdversaires().then(function() {
-        loadMatchs();
-        skLoad();
+        loadMatchs().then(function() { skLoad(); });
         if (bracketScanStarted) {
             scanBrackets();
             setInterval(scanBrackets, 120000);
