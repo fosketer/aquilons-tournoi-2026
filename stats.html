@@ -229,6 +229,7 @@
         <div id="regionSections"></div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
     // ==========================================
     // TOURNAMENT TEAMS (from Supabase)
@@ -438,11 +439,8 @@
     // ==========================================
     // INIT
     // ==========================================
-    function initStats() {
-        loadTourneyTeams();
-        buildRegions();
-    }
+    loadTourneyTeams();
+    buildRegions();
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="initStats()"></script>
 </body>
 </html>
