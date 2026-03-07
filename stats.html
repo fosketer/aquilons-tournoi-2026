@@ -182,13 +182,12 @@
         .region-section { display: none; }
         .region-section.show { display: block; }
 
-        .source-info {
-            margin-top: 1.5rem; padding-top: 0.8rem;
-            border-top: 1px solid rgba(26,86,184,0.15);
-            font-size: 0.65rem; color: var(--silver-dark); text-align: center;
+        .region-source {
+            font-size: 0.6rem; color: var(--silver-dark); text-align: right;
+            padding: 0.3rem 0.6rem;
         }
-        .source-info a { color: var(--gray); text-decoration: none; }
-        .source-info a:hover { color: var(--blue-light); }
+        .region-source a { color: var(--gray); text-decoration: none; }
+        .region-source a:hover { color: var(--blue-light); }
     </style>
 </head>
 <body>
@@ -236,9 +235,6 @@
         <div class="region-tabs" id="regionTabs"></div>
         <div id="regionSections"></div>
 
-        <div class="source-info">
-            Sources : <a href="https://diffusion.s1.rseq.ca/" target="_blank">RSEQ S1</a> &amp; <a href="https://rseqqca.com/volleyball/secondaire/horaire" target="_blank">RSEQ-QCA</a>
-        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -355,6 +351,7 @@
                     var total = (cols[11] || '').trim() || '-';
                     region.teams.push([rang, equipe, t3, t4, t5, total]);
                 }
+                region.source = { name: 'RSEQ-QCA', url: 'https://rseqqca.com/volleyball/secondaire/horaire' };
                 return region;
             });
     }
@@ -381,6 +378,7 @@
         var sexName = data.SexTypeName || '';
         var divName = data.DivisionName || '';
         region.info = [catName, sexName, divName].filter(Boolean).join(' ');
+        region.source = { name: 'RSEQ S1', url: 'https://diffusion.s1.rseq.ca/' };
 
         if (cfg.type === 'volleyball' && data.StandingsVolleyball && data.StandingsVolleyball.length > 0) {
             // Determine which tournaments are shown
@@ -450,7 +448,11 @@
                 sectHtml += '</tbody></table>';
             }
 
-            sectHtml += '</div></div>';
+            sectHtml += '</div>';
+            if (r.source) {
+                sectHtml += '<div class="region-source">Source\u00a0: <a href="' + r.source.url + '" target="_blank">' + r.source.name + '</a></div>';
+            }
+            sectHtml += '</div>';
         });
 
         tabsEl.innerHTML = tabsHtml;
