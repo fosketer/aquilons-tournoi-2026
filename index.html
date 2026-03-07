@@ -1421,6 +1421,7 @@
         var current = sel.value;
         sel.innerHTML = '<option value="">-- Marquer un match --</option>';
         matchs.forEach(function(m) {
+            if (m.statut === 'win' || m.statut === 'loss') return;
             var opt = document.createElement('option');
             opt.value = m.numero;
             opt.dataset.adv = m.adversaire;
