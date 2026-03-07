@@ -640,6 +640,119 @@
             border-radius: 6px;
             margin: 1rem 0;
         }
+
+        /* SCOREBOARD (always visible) */
+        .scoreboard {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .scoreboard-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(26,86,184,0.25);
+            border-radius: 12px;
+            padding: 1rem 1.2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scoreboard-card.is-live {
+            border-color: var(--blue);
+            animation: pulse-border 2s infinite;
+        }
+
+        .scoreboard-card.is-upcoming {
+            border-color: rgba(168,169,173,0.2);
+        }
+
+        .sb-status {
+            text-align: center;
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            margin-bottom: 0.6rem;
+        }
+
+        .sb-status.live { color: var(--blue-light); animation: pulse-text 1.5s infinite; }
+        .sb-status.upcoming { color: var(--silver-dark); }
+
+        .sb-teams {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .sb-team {
+            flex: 1;
+            text-align: center;
+        }
+
+        .sb-team-name {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .sb-team-name.aq { color: var(--blue-light); }
+        .sb-team-name.adv { color: var(--white); }
+
+        .sb-score {
+            font-family: 'Oswald', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .sb-score.aq { color: var(--blue-light); }
+        .sb-score.adv { color: var(--white); }
+
+        .sb-vs {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1rem;
+            color: var(--silver-dark);
+            padding: 0 0.3rem;
+        }
+
+        .sb-set-info {
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--gray);
+            margin-top: 0.5rem;
+        }
+
+        .sb-sets-summary {
+            display: flex;
+            justify-content: center;
+            gap: 0.6rem;
+            margin-top: 0.4rem;
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.8rem;
+        }
+
+        .sb-set-chip {
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .sb-set-chip.won { color: var(--blue-light); }
+        .sb-set-chip.lost { color: var(--silver-dark); }
+
+        .sb-match-time {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--gray);
+            margin-top: 0.3rem;
+        }
+
+        .sb-match-time .venue {
+            font-size: 0.65rem;
+            color: var(--silver-dark);
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -683,6 +796,9 @@
             <div class="bilan-label">Sets perdus</div>
         </div>
     </div>
+
+    <!-- SCOREBOARD (always visible) -->
+    <div class="scoreboard" id="scoreboard"></div>
 
     <!-- SCOREKEEPER -->
     <div class="scorekeeper" id="scorekeeper">
@@ -810,6 +926,71 @@
         return { aq: aqScore, adv: advScore, aqCls: won ? 'won' : 'lost', advCls: won ? 'lost' : 'won' };
     }
 
+    function renderScoreboard(matchs) {
+        var container = document.getElementById('scoreboard');
+        var live = matchs.find(function(m) { return m.statut === 'live'; });
+        var next = !live ? matchs.find(function(m) { return m.statut === 'upcoming'; }) : null;
+        var target = live || next;
+
+        if (!target) {
+            container.innerHTML = '';
+            return;
+        }
+
+        var isLive = !!live;
+        var aqScore = isLive ? (target.aq_score_courant || 0) : 0;
+        var advScore = isLive ? (target.adv_score_courant || 0) : 0;
+        var setInfo = '';
+
+        if (isLive && target.set_courant > 0) {
+            setInfo = 'Set ' + target.set_courant + ' en cours';
+        } else if (!isLive) {
+            setInfo = target.heure + (target.match_externe ? ' \u00b7 M' + target.match_externe : '');
+        }
+
+        var setsHtml = '';
+        var s1 = target.aq_set1 != null ? target.aq_set1 + '-' + target.adv_set1 : null;
+        var s2 = target.aq_set2 != null ? target.aq_set2 + '-' + target.adv_set2 : null;
+        if (s1 || s2) {
+            setsHtml = '<div class="sb-sets-summary">';
+            if (s1) {
+                var w1 = target.aq_set1 > target.adv_set1;
+                setsHtml += '<span class="sb-set-chip ' + (w1 ? 'won' : 'lost') + '">S1: ' + s1 + '</span>';
+            }
+            if (s2) {
+                var w2 = target.aq_set2 > target.adv_set2;
+                setsHtml += '<span class="sb-set-chip ' + (w2 ? 'won' : 'lost') + '">S2: ' + s2 + '</span>';
+            }
+            setsHtml += '</div>';
+        }
+
+        var venueHtml = '';
+        if (!isLive && target.lieu_nom) {
+            venueHtml = '<div class="sb-match-time"><span class="venue">' + target.lieu_nom + ' \u2014 ' + target.terrain + '</span></div>';
+        }
+
+        container.innerHTML =
+            '<div class="scoreboard-card ' + (isLive ? 'is-live' : 'is-upcoming') + '">' +
+                '<div class="sb-status ' + (isLive ? 'live' : 'upcoming') + '">' +
+                    (isLive ? '\u25CF En cours' : 'Prochain match') +
+                '</div>' +
+                '<div class="sb-teams">' +
+                    '<div class="sb-team">' +
+                        '<div class="sb-team-name aq">Aquilons</div>' +
+                        '<div class="sb-score aq">' + aqScore + '</div>' +
+                    '</div>' +
+                    '<div class="sb-vs">-</div>' +
+                    '<div class="sb-team">' +
+                        '<div class="sb-team-name adv">' + target.adversaire + '</div>' +
+                        '<div class="sb-score adv">' + advScore + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="sb-set-info">' + setInfo + '</div>' +
+                setsHtml +
+                venueHtml +
+            '</div>';
+    }
+
     function renderMatchs(matchs) {
         var container = document.getElementById('matchsContainer');
         var statusMap = {
@@ -881,6 +1062,8 @@
                 '</div>' +
             '</div>';
         }).join('');
+
+        renderScoreboard(matchs);
 
         var updateEl = document.getElementById('lastUpdate');
         var live = matchs.find(function(m) { return m.statut === 'live'; });
