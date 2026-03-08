@@ -71,6 +71,40 @@
         .nav a:hover { color: var(--silver-light); }
         .nav a.active { color: var(--blue-light); border-bottom-color: var(--blue); }
 
+        .tournoi-selector {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            background: var(--bg-light);
+            border-bottom: 1px solid rgba(26,86,184,0.2);
+        }
+
+        .tournoi-btn {
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 0.4rem 1.2rem;
+            border-radius: 20px;
+            border: 1px solid rgba(26,86,184,0.3);
+            background: transparent;
+            color: var(--silver-dark);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tournoi-btn:hover {
+            color: var(--silver-light);
+            border-color: rgba(26,86,184,0.5);
+        }
+
+        .tournoi-btn.active {
+            background: var(--blue);
+            color: var(--white);
+            border-color: var(--blue);
+        }
+
         .content { max-width: 700px; margin: 0 auto; padding: 1rem 1rem 3rem; }
 
         .section-title {
@@ -203,6 +237,11 @@
         <a href="stats.html" class="active">Stats</a>
     </div>
 
+    <div class="tournoi-selector" id="tournoiSelector">
+        <button class="tournoi-btn" data-tournoi="cvs" onclick="switchTournoi('cvs')">CVS Alma</button>
+        <button class="tournoi-btn" data-tournoi="qca" onclick="switchTournoi('qca')">R&eacute;gional QCA</button>
+    </div>
+
     <div class="content">
         <div class="section-title">
             &Eacute;quipes du tournoi CVS
@@ -266,7 +305,72 @@
     // ==========================================
     var SUPABASE_URL = 'https://rtbmpcitrymeqzpjwneh.supabase.co';
     var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Ym1wY2l0cnltZXF6cGp3bmVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NDgyOTEsImV4cCI6MjA4ODQyNDI5MX0.6qvaCDLDiCX4KZLJHK1_JiPHROoCtiiEQjsBJbS4CiU';
-    var TOURNOI_ID = 'a0000000-0000-0000-0000-000000000001';
+    var TOURNOIS = {
+        cvs: {
+            id: 'a0000000-0000-0000-0000-000000000001',
+            nom: 'CVS Alma 2026',
+            slug: 'cvs',
+            equipe: 'Aquilons',
+            ecole: 'Jean-de-Brébeuf'
+        },
+        qca: {
+            id: 'a0000000-0000-0000-0000-000000000002',
+            nom: 'Régional QCA 2026',
+            slug: 'qca',
+            equipe: 'Aquilons',
+            ecole: 'Jean-de-Brébeuf'
+        }
+    };
+
+    function getTournoiActif() {
+        var params = new URLSearchParams(window.location.search);
+        var p = params.get('tournoi');
+        if (p && TOURNOIS[p]) return p;
+        var stored = localStorage.getItem('tournoi');
+        if (stored && TOURNOIS[stored]) return stored;
+        return 'cvs';
+    }
+
+    var tournoiActif = getTournoiActif();
+    var TOURNOI_ID = TOURNOIS[tournoiActif].id;
+    localStorage.setItem('tournoi', tournoiActif);
+
+    var STATS_CONFIG = {
+        cvs: {
+            sectionTitle: '\u00c9quipes du tournoi CVS',
+            highlights: [
+                'Jean-de-Br\u00e9beuf 1',
+                'Armand-Saint-Onge 1', 'Armand Saint-Onge 1',
+                'JDNManikoutai (MED)', 'JDN/Manikoutai (MED)',
+                'Odyss\u00e9e 1'
+            ],
+            leagues: [
+                { id: 'sag', name: 'Saguenay-Lac-Saint-Jean', leagueId: 'cad4071e-1e26-4c8d-ab45-7f72fd92fa43', type: 'volleyball' },
+                { id: 'estqc-est', name: 'Est-du-Qu\u00e9bec (Est)', leagueId: '330427e7-9293-4467-92d5-71bc84505a21', type: 'standings' },
+                { id: 'estqc-ouest', name: 'Est-du-Qu\u00e9bec (Ouest)', leagueId: 'a7d24a40-66f9-473c-9956-d9dc2a462819', type: 'standings' },
+                { id: 'cn-d3', name: 'C\u00f4te-Nord (D3)', leagueId: '533891a0-5f82-4d54-b1fc-3815d1b6bed2', type: 'volleyball' },
+                { id: 'cn-d4', name: 'C\u00f4te-Nord (D4)', leagueId: '775bc7f1-352c-4f4e-8339-8f5e65e0598d', type: 'volleyball' }
+            ],
+            teamMap: [
+                { tournoi: 'Aquilons', search: 'Jean-de-Br\u00e9beuf 1', regionId: 'qca' },
+                { tournoi: 'Tigres d\u2019Am\u00e9', search: 'Armand-Saint-Onge 1', regionId: 'estqc-ouest' },
+                { tournoi: 'Husky JDN', search: 'JDNManikoutai (MED)', regionId: 'cn-d3' },
+                { tournoi: 'Husky KS', search: 'JDNManikoutai (KS)', regionId: 'cn-d4' },
+                { tournoi: 'Bleu et Or', search: 'Odyss\u00e9e 1', regionId: 'sag' }
+            ],
+            showAllRegions: true
+        },
+        qca: {
+            sectionTitle: '\u00c9quipes du R\u00e9gional QCA',
+            highlights: ['Jean-de-Br\u00e9beuf 1'],
+            leagues: [],
+            teamMap: [
+                { tournoi: 'Aquilons', search: 'Jean-de-Br\u00e9beuf 1', regionId: 'qca' }
+            ],
+            showAllRegions: false
+        }
+    };
+
     var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     async function loadTourneyTeams() {
@@ -305,55 +409,18 @@
     var RSEQ_BASE = 'https://diffusion.s1.rseq.ca/api';
     var RSEQ_YEAR = '69056db0-aac8-49b0-8fc9-4091573205ea'; // 2025-2026
 
-    // Équipes du tournoi CVS à mettre en surbrillance (équipe 1 de chaque école)
-    var TOURNEY_HIGHLIGHTS = [
-        'Jean-de-Br\u00e9beuf 1',
-        'Armand-Saint-Onge 1', 'Armand Saint-Onge 1',
-        'JDNManikoutai (MED)', 'JDN/Manikoutai (MED)',
-        'Odyss\u00e9e 1'
-    ];
-
     function isHighlighted(teamName) {
+        var highlights = STATS_CONFIG[tournoiActif].highlights;
         var name = teamName.toLowerCase();
-        for (var i = 0; i < TOURNEY_HIGHLIGHTS.length; i++) {
-            if (name.indexOf(TOURNEY_HIGHLIGHTS[i].toLowerCase()) !== -1) return true;
+        for (var i = 0; i < highlights.length; i++) {
+            if (name.indexOf(highlights[i].toLowerCase()) !== -1) return true;
         }
         return false;
     }
 
-    // Leagues to fetch from RSEQ API
-    var RSEQ_LEAGUES = [
-        {
-            id: 'sag',
-            name: 'Saguenay-Lac-Saint-Jean',
-            leagueId: 'cad4071e-1e26-4c8d-ab45-7f72fd92fa43',
-            type: 'volleyball'
-        },
-        {
-            id: 'estqc-est',
-            name: 'Est-du-Qu\u00e9bec (Est)',
-            leagueId: '330427e7-9293-4467-92d5-71bc84505a21',
-            type: 'standings'
-        },
-        {
-            id: 'estqc-ouest',
-            name: 'Est-du-Qu\u00e9bec (Ouest)',
-            leagueId: 'a7d24a40-66f9-473c-9956-d9dc2a462819',
-            type: 'standings'
-        },
-        {
-            id: 'cn-d3',
-            name: 'C\u00f4te-Nord (D3)',
-            leagueId: '533891a0-5f82-4d54-b1fc-3815d1b6bed2',
-            type: 'volleyball'
-        },
-        {
-            id: 'cn-d4',
-            name: 'C\u00f4te-Nord (D4)',
-            leagueId: '775bc7f1-352c-4f4e-8339-8f5e65e0598d',
-            type: 'volleyball'
-        }
-    ];
+    function getRSEQLeagues() {
+        return STATS_CONFIG[tournoiActif].leagues;
+    }
 
     // QCA standings from Google Sheets (not available on RSEQ S1)
     var QCA_SHEET_ID = '1J4ttjcJRPh2bift-6on67t3qp4Tyx_TxPrjJRF3t_3Q';
@@ -505,7 +572,7 @@
     async function loadRegions() {
         // Fetch QCA from Google Sheets + RSEQ leagues in parallel
         var qcaPromise = fetchQCAStandings().catch(function() { return null; });
-        var rseqPromises = RSEQ_LEAGUES.map(function(cfg) {
+        var rseqPromises = getRSEQLeagues().map(function(cfg) {
             return fetchLeagueDiffusion(cfg.leagueId).then(function(data) {
                 return { cfg: cfg, data: data };
             }).catch(function() { return null; });
@@ -532,19 +599,14 @@
         buildRankSummary();
     }
 
-    // Mapping: nom tournoi → infos pour chercher dans les classements
-    var TOURNEY_TEAM_MAP = [
-        { tournoi: 'Aquilons', search: 'Jean-de-Br\u00e9beuf 1', regionId: 'qca' },
-        { tournoi: 'Tigres d\u2019Am\u00e9', search: 'Armand-Saint-Onge 1', regionId: 'estqc-ouest' },
-        { tournoi: 'Husky JDN', search: 'JDNManikoutai (MED)', regionId: 'cn-d3' },
-        { tournoi: 'Husky KS', search: 'JDNManikoutai (KS)', regionId: 'cn-d4' },
-        { tournoi: 'Bleu et Or', search: 'Odyss\u00e9e 1', regionId: 'sag' }
-    ];
+    function getTourneyTeamMap() {
+        return STATS_CONFIG[tournoiActif].teamMap;
+    }
 
     function buildRankSummary() {
         var body = document.getElementById('rankBody');
         var rows = '';
-        TOURNEY_TEAM_MAP.forEach(function(tm) {
+        getTourneyTeamMap().forEach(function(tm) {
             var found = null;
             var total = 0;
             var regionName = '';
@@ -574,9 +636,47 @@
         body.innerHTML = rows || '<tr><td colspan="5" class="no-data">Aucune donn\u00e9e</td></tr>';
     }
 
+    function switchTournoi(slug) {
+        if (slug === tournoiActif) return;
+        tournoiActif = slug;
+        TOURNOI_ID = TOURNOIS[slug].id;
+        localStorage.setItem('tournoi', slug);
+
+        var url = new URL(window.location);
+        url.searchParams.set('tournoi', slug);
+        history.replaceState(null, '', url);
+
+        updateTournoiUI();
+
+        // Reload all data
+        regions = [];
+        loadTourneyTeams();
+        loadRegions();
+    }
+
+    function updateTournoiUI() {
+        document.querySelectorAll('.tournoi-btn').forEach(function(btn) {
+            btn.classList.toggle('active', btn.dataset.tournoi === tournoiActif);
+        });
+
+        // Section title
+        var titleEl = document.querySelector('.section-title');
+        if (titleEl) {
+            titleEl.innerHTML = STATS_CONFIG[tournoiActif].sectionTitle +
+                ' <span class="section-sub">Saison RSEQ 2025-2026</span>';
+        }
+
+        // Nav: hide classement for non-CVS
+        var classementLink = document.querySelector('.nav a[href="classement.html"]');
+        if (classementLink) {
+            classementLink.style.display = (tournoiActif === 'cvs') ? '' : 'none';
+        }
+    }
+
     // ==========================================
     // INIT
     // ==========================================
+    updateTournoiUI();
     loadTourneyTeams();
     loadRegions();
     </script>
