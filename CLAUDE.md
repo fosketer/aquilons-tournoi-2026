@@ -14,11 +14,13 @@ Site statique (HTML/CSS/JS) hébergé sur GitHub Pages, connecté à Supabase po
 
 ## Supabase
 
-- **URL :** `https://lmbjnbnnaogpoefiywgq.supabase.co`
+- **URL :** `https://rtbmpcitrymeqzpjwneh.supabase.co`
 - **Tables :** `tournois`, `matchs`, `adversaires`, `points`
 - **Realtime :** activé sur `matchs` et `points`
 - **RLS :** lecture publique, écriture publique (anon key)
-- **Tournoi ID :** `a0000000-0000-0000-0000-000000000001`
+- **Tournoi CVS ID :** `a0000000-0000-0000-0000-000000000001`
+- **Tournoi QCA ID :** `a0000000-0000-0000-0000-000000000002`
+- **Sélecteur :** toggle UI sous la nav, persisté localStorage + query param `?tournoi=`
 
 ### Table `matchs`
 Colonnes clés : `numero`, `heure`, `adversaire`, `terrain`, `lieu_nom`, `lieu_adresse`, `lieu_maps_url`, `aq_set1`, `adv_set1`, `aq_set2`, `adv_set2`, `aq_score_courant`, `adv_score_courant`, `set_courant`, `statut`, `set1_debut`, `set1_fin`, `set2_debut`, `set2_fin`, `match_externe`
