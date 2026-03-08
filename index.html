@@ -313,6 +313,42 @@
             letter-spacing: 0.08em;
         }
 
+        .sk-minus-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sk-minus {
+            flex: 1;
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 0.45rem 0;
+            border-radius: 8px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.15s;
+        }
+
+        .sk-minus:active { transform: scale(0.95); }
+
+        .sk-minus.aq {
+            background: rgba(26,86,184,0.08);
+            border: 1px solid rgba(26,86,184,0.25);
+            color: rgba(26,86,184,0.7);
+        }
+        .sk-minus.aq:active { background: rgba(26,86,184,0.2); color: var(--blue-light); }
+
+        .sk-minus.adv {
+            background: rgba(168,169,173,0.06);
+            border: 1px solid rgba(168,169,173,0.2);
+            color: rgba(168,169,173,0.6);
+        }
+        .sk-minus.adv:active { background: rgba(168,169,173,0.15); color: var(--silver); }
+
+        .sk-minus-row.disabled .sk-minus { pointer-events: none; opacity: 0.4; }
+
         .sk-controls {
             display: flex;
             justify-content: center;
@@ -853,8 +889,11 @@
                     <div class="sk-tap-hint">Toucher = +1</div>
                 </div>
             </div>
+            <div class="sk-minus-row" id="skMinusRow">
+                <button class="sk-minus aq" onclick="skMinus('aq')">-1</button>
+                <button class="sk-minus adv" onclick="skMinus('adv')">-1</button>
+            </div>
             <div class="sk-controls" id="skControls">
-                <button class="sk-btn danger" onclick="skUndo()">Annuler</button>
                 <button class="sk-btn" onclick="skResetSet()">Reset set</button>
             </div>
             <div class="sk-set-history" id="skSetHistory"></div>
@@ -1225,6 +1264,7 @@
     function skUpdateDisabled() {
         var disabled = !sk.matchNum || sk.matchDone;
         document.getElementById('skScoreboard').className = 'sk-scoreboard' + (disabled ? ' disabled' : '');
+        document.getElementById('skMinusRow').className = 'sk-minus-row' + (disabled ? ' disabled' : '');
         document.getElementById('skControls').className = 'sk-controls' + (disabled ? ' disabled' : '');
     }
 
@@ -1384,11 +1424,19 @@
             ' \u00b7 Set 2: ' + sk.sets[1].aq + '-' + sk.sets[1].adv + d2t + '</div>';
     }
 
-    function skUndo() {
-        if (!sk.matchNum || sk.matchDone || sk.pointLog.length === 0) return;
-        var last = sk.pointLog.pop();
-        if (last === 'aq') sk.aqScore = Math.max(0, sk.aqScore - 1);
-        else sk.advScore = Math.max(0, sk.advScore - 1);
+    function skMinus(team) {
+        if (!sk.matchNum || sk.matchDone) return;
+        if (team === 'aq' && sk.aqScore <= 0) return;
+        if (team === 'adv' && sk.advScore <= 0) return;
+
+        if (team === 'aq') sk.aqScore--;
+        else sk.advScore--;
+
+        // Remove last occurrence of this team from pointLog
+        for (var i = sk.pointLog.length - 1; i >= 0; i--) {
+            if (sk.pointLog[i] === team) { sk.pointLog.splice(i, 1); break; }
+        }
+
         document.getElementById('skScoreAq').textContent = sk.aqScore;
         document.getElementById('skScoreAdv').textContent = sk.advScore;
         skSave();
@@ -1396,6 +1444,7 @@
         if (matchDbId) {
             sb.from('points').select('id')
                 .eq('match_id', matchDbId)
+                .eq('equipe', team)
                 .order('id', { ascending: false })
                 .limit(1)
                 .then(function(res) {

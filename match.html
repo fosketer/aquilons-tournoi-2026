@@ -277,8 +277,43 @@
         .btn:active { transform: scale(0.95); }
         .btn:hover { color: var(--white); border-color: rgba(26,86,184,0.4); }
 
-        .btn.danger { border-color: rgba(229,57,53,0.2); }
-        .btn.danger:hover { color: var(--loss); border-color: rgba(229,57,53,0.4); }
+        .minus-row {
+            display: flex;
+            gap: 0.5rem;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 0 1rem 0.5rem;
+        }
+
+        .minus-btn {
+            flex: 1;
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 0.45rem 0;
+            border-radius: 8px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.15s;
+        }
+
+        .minus-btn:active { transform: scale(0.95); }
+
+        .minus-btn.aq {
+            background: rgba(26,86,184,0.08);
+            border: 1px solid rgba(26,86,184,0.25);
+            color: rgba(26,86,184,0.7);
+        }
+        .minus-btn.aq:active { background: rgba(26,86,184,0.2); color: var(--blue-light); }
+
+        .minus-btn.adv {
+            background: rgba(168,169,173,0.06);
+            border: 1px solid rgba(168,169,173,0.2);
+            color: rgba(168,169,173,0.6);
+        }
+        .minus-btn.adv:active { background: rgba(168,169,173,0.15); color: var(--silver); }
+
+        .minus-row.disabled .minus-btn { pointer-events: none; opacity: 0.4; }
 
         .btn.primary {
             background: var(--blue);
@@ -532,9 +567,14 @@
         </div>
     </div>
 
+    <!-- MINUS BUTTONS -->
+    <div class="minus-row" id="minusRow">
+        <button class="minus-btn aq" onclick="minus('aq')">-1</button>
+        <button class="minus-btn adv" onclick="minus('adv')">-1</button>
+    </div>
+
     <!-- CONTROLS -->
     <div class="controls" id="controls">
-        <button class="btn danger" onclick="undo()">Annuler</button>
         <button class="btn" onclick="resetSet()">Reset set</button>
         <button class="btn" onclick="switchService()">Service</button>
     </div>
@@ -814,22 +854,29 @@
     // ==========================================
     // CONTROLS
     // ==========================================
-    function undo() {
-        if (!state.matchNum || state.matchDone || state.pointLog.length === 0) return;
+    function minus(team) {
+        if (!state.matchNum || state.matchDone) return;
+        if (team === 'aq' && state.aqScore <= 0) return;
+        if (team === 'adv' && state.advScore <= 0) return;
 
-        var last = state.pointLog.pop();
-        if (last === 'aq') state.aqScore = Math.max(0, state.aqScore - 1);
-        else state.advScore = Math.max(0, state.advScore - 1);
+        if (team === 'aq') state.aqScore--;
+        else state.advScore--;
+
+        // Remove last occurrence of this team from pointLog
+        for (var i = state.pointLog.length - 1; i >= 0; i--) {
+            if (state.pointLog[i] === team) { state.pointLog.splice(i, 1); break; }
+        }
 
         document.getElementById('scoreAq').textContent = state.aqScore;
         document.getElementById('scoreAdv').textContent = state.advScore;
         renderPointLog();
         saveState();
 
-        // Delete last point from Supabase
+        // Delete last point for this team from Supabase
         if (matchDbId) {
             sb.from('points').select('id')
                 .eq('match_id', matchDbId)
+                .eq('equipe', team)
                 .order('id', { ascending: false })
                 .limit(1)
                 .then(function(res) {
@@ -925,6 +972,7 @@
     function updateDisabledState() {
         var disabled = !state.matchNum || state.matchDone;
         document.getElementById('scoreboard').className = 'scoreboard' + (disabled ? ' disabled' : '');
+        document.getElementById('minusRow').className = 'minus-row' + (disabled ? ' disabled' : '');
         document.getElementById('controls').className = 'controls' + (disabled ? ' disabled' : '');
     }
 
