@@ -132,6 +132,40 @@
         .nav a:hover { color: var(--silver-light); }
         .nav a.active { color: var(--blue-light); border-bottom-color: var(--blue); }
 
+        .tournoi-selector {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            background: var(--bg-light);
+            border-bottom: 1px solid rgba(26,86,184,0.2);
+        }
+
+        .tournoi-btn {
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 0.4rem 1.2rem;
+            border-radius: 20px;
+            border: 1px solid rgba(26,86,184,0.3);
+            background: transparent;
+            color: var(--silver-dark);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tournoi-btn:hover {
+            color: var(--silver-light);
+            border-color: rgba(26,86,184,0.5);
+        }
+
+        .tournoi-btn.active {
+            background: var(--blue);
+            color: var(--white);
+            border-color: var(--blue);
+        }
+
         /* BILAN */
         .bilan {
             display: flex;
@@ -832,6 +866,11 @@
         <a href="stats.html">Stats</a>
     </div>
 
+    <div class="tournoi-selector" id="tournoiSelector">
+        <button class="tournoi-btn" data-tournoi="cvs" onclick="switchTournoi('cvs')">CVS Alma</button>
+        <button class="tournoi-btn" data-tournoi="qca" onclick="switchTournoi('qca')">R&eacute;gional QCA</button>
+    </div>
+
     <!-- BILAN -->
     <div class="bilan">
         <div class="bilan-item">
@@ -921,7 +960,35 @@
     var SUPABASE_URL = 'https://rtbmpcitrymeqzpjwneh.supabase.co';
     var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0Ym1wY2l0cnltZXF6cGp3bmVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NDgyOTEsImV4cCI6MjA4ODQyNDI5MX0.6qvaCDLDiCX4KZLJHK1_JiPHROoCtiiEQjsBJbS4CiU';
     var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    var TOURNOI_ID = 'a0000000-0000-0000-0000-000000000001';
+    var TOURNOIS = {
+        cvs: {
+            id: 'a0000000-0000-0000-0000-000000000001',
+            nom: 'CVS Alma 2026',
+            slug: 'cvs',
+            equipe: 'Aquilons',
+            ecole: 'Jean-de-Brébeuf'
+        },
+        qca: {
+            id: 'a0000000-0000-0000-0000-000000000002',
+            nom: 'Régional QCA 2026',
+            slug: 'qca',
+            equipe: 'Aquilons',
+            ecole: 'Jean-de-Brébeuf'
+        }
+    };
+
+    function getTournoiActif() {
+        var params = new URLSearchParams(window.location.search);
+        var p = params.get('tournoi');
+        if (p && TOURNOIS[p]) return p;
+        var stored = localStorage.getItem('tournoi');
+        if (stored && TOURNOIS[stored]) return stored;
+        return 'cvs';
+    }
+
+    var tournoiActif = getTournoiActif();
+    var TOURNOI_ID = TOURNOIS[tournoiActif].id;
+    localStorage.setItem('tournoi', tournoiActif);
 
     var adversairesMap = {};
 
@@ -1716,6 +1783,58 @@
     }
 
     // ==========================================
+    // TOURNAMENT SWITCHING
+    // ==========================================
+    function switchTournoi(slug) {
+        if (slug === tournoiActif) return;
+        tournoiActif = slug;
+        TOURNOI_ID = TOURNOIS[slug].id;
+        localStorage.setItem('tournoi', slug);
+
+        // Update URL without reload
+        var url = new URL(window.location);
+        url.searchParams.set('tournoi', slug);
+        history.replaceState(null, '', url);
+
+        // Update UI
+        updateTournoiUI();
+
+        // Re-subscribe realtime
+        sb.removeAllChannels();
+        sb.channel('matchs-realtime')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'matchs' }, function() { loadMatchs(); })
+            .subscribe();
+
+        // Reload data
+        adversairesMap = {};
+        loadAdversaires().then(function() {
+            loadMatchs().then(function() { skLoad(); });
+        });
+    }
+
+    function updateTournoiUI() {
+        // Selector buttons
+        document.querySelectorAll('.tournoi-btn').forEach(function(btn) {
+            btn.classList.toggle('active', btn.dataset.tournoi === tournoiActif);
+        });
+
+        // Header tournament info
+        var t = TOURNOIS[tournoiActif];
+        var tourNameEl = document.querySelector('.tourney-name');
+        if (tourNameEl) tourNameEl.textContent = t.nom;
+
+        // Nav: hide/show classement link
+        var classementLink = document.querySelector('.nav a[href="classement.html"]');
+        if (classementLink) {
+            classementLink.style.display = (tournoiActif === 'cvs') ? '' : 'none';
+        }
+
+        // Footer
+        var footer = document.querySelector('.footer');
+        if (footer) footer.innerHTML = 'Aquilons &middot; Jean de Br&eacute;beuf &middot; ' + t.nom;
+    }
+
+    // ==========================================
     // INIT
     // ==========================================
     var urlParams = new URLSearchParams(window.location.search);
@@ -1725,9 +1844,13 @@
         bracketScanStarted = true;
     }
 
+    // Set initial tournament UI
+    updateTournoiUI();
+
     loadAdversaires().then(function() {
         loadMatchs().then(function() { skLoad(); });
-        if (bracketScanStarted) {
+        // Bracket scanning only for CVS (CVS-specific Google Sheets)
+        if (bracketScanStarted && tournoiActif === 'cvs') {
             scanBrackets();
             setInterval(scanBrackets, 120000);
         }
