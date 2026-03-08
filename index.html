@@ -875,6 +875,7 @@
                 <span class="sk-set-label">Sets</span>
                 <div class="sk-set-bubble active" id="skBub1">1</div>
                 <div class="sk-set-bubble" id="skBub2">2</div>
+                <div class="sk-set-bubble" id="skBub3">3</div>
             </div>
             <div class="sk-scoreboard" id="skScoreboard">
                 <div class="sk-side aq" onclick="skPoint('aq')">
@@ -1015,18 +1016,20 @@
         }
 
         var setsHtml = '';
-        var s1 = target.aq_set1 != null ? target.aq_set1 + '-' + target.adv_set1 : null;
-        var s2 = target.aq_set2 != null ? target.aq_set2 + '-' + target.adv_set2 : null;
-        if (s1 || s2) {
+        var setData = [
+            { label: 'S1', aq: target.aq_set1, adv: target.adv_set1 },
+            { label: 'S2', aq: target.aq_set2, adv: target.adv_set2 },
+            { label: 'S3', aq: target.aq_set3, adv: target.adv_set3 }
+        ];
+        var hasSetData = setData.some(function(s) { return s.aq != null; });
+        if (hasSetData) {
             setsHtml = '<div class="sb-sets-summary">';
-            if (s1) {
-                var w1 = target.aq_set1 > target.adv_set1;
-                setsHtml += '<span class="sb-set-chip ' + (w1 ? 'won' : 'lost') + '">S1: ' + s1 + '</span>';
-            }
-            if (s2) {
-                var w2 = target.aq_set2 > target.adv_set2;
-                setsHtml += '<span class="sb-set-chip ' + (w2 ? 'won' : 'lost') + '">S2: ' + s2 + '</span>';
-            }
+            setData.forEach(function(s) {
+                if (s.aq != null) {
+                    var w = s.aq > s.adv;
+                    setsHtml += '<span class="sb-set-chip ' + (w ? 'won' : 'lost') + '">' + s.label + ': ' + s.aq + '-' + s.adv + '</span>';
+                }
+            });
             setsHtml += '</div>';
         }
 
@@ -1080,8 +1083,9 @@
             var st = statusMap[m.statut] || defaultSt;
             var s1 = scoreCell(m.aq_set1, m.adv_set1);
             var s2 = scoreCell(m.aq_set2, m.adv_set2);
+            var s3 = scoreCell(m.aq_set3, m.adv_set3);
 
-            // For live match, show current score as a third column
+            // For live match, show current score as extra column
             var liveCol = '';
             if (m.statut === 'live' && m.set_courant > 0) {
                 liveCol =
@@ -1106,6 +1110,7 @@
                         '<div class="set-scores">' +
                             '<span class="set-score ' + s1.aqCls + '">' + s1.aq + '</span>' +
                             '<span class="set-score ' + s2.aqCls + '">' + s2.aq + '</span>' +
+                            (s3.aq !== '-' ? '<span class="set-score ' + s3.aqCls + '">' + s3.aq + '</span>' : '') +
                             (liveCol || '') +
                         '</div>' +
                     '</div>' +
@@ -1115,6 +1120,7 @@
                         '<div class="set-scores">' +
                             '<span class="set-score ' + s1.advCls + '">' + s1.adv + '</span>' +
                             '<span class="set-score ' + s2.advCls + '">' + s2.adv + '</span>' +
+                            (s3.adv !== '-' ? '<span class="set-score ' + s3.advCls + '">' + s3.adv + '</span>' : '') +
                             (liveColAdv || '') +
                         '</div>' +
                     '</div>' +
@@ -1158,6 +1164,7 @@
             if (m.statut === 'draw') draws++;
             if (m.aq_set1 != null && m.adv_set1 != null) { m.aq_set1 > m.adv_set1 ? setsW++ : setsL++; }
             if (m.aq_set2 != null && m.adv_set2 != null) { m.aq_set2 > m.adv_set2 ? setsW++ : setsL++; }
+            if (m.aq_set3 != null && m.adv_set3 != null) { m.aq_set3 > m.adv_set3 ? setsW++ : setsL++; }
         });
         document.getElementById('bilanWins').textContent = wins;
         document.getElementById('bilanDraws').textContent = draws;
@@ -1178,7 +1185,7 @@
         sets: [],
         pointLog: [],
         matchDone: false,
-        setTimestamps: { set1_debut: null, set1_fin: null, set2_debut: null, set2_fin: null }
+        setTimestamps: { set1_debut: null, set1_fin: null, set2_debut: null, set2_fin: null, set3_debut: null, set3_fin: null }
     };
 
     var matchDbId = null;
@@ -1222,19 +1229,15 @@
     }
 
     function skUpdateBubbles() {
-        var b1 = document.getElementById('skBub1');
-        var b2 = document.getElementById('skBub2');
-        b1.className = 'sk-set-bubble';
-        b2.className = 'sk-set-bubble';
-        if (sk.sets.length === 0) {
-            b1.classList.add('active');
-        } else if (sk.sets.length === 1) {
-            b1.classList.add(sk.sets[0].aq > sk.sets[0].adv ? 'won' : 'lost');
-            b2.classList.add('active');
-        } else {
-            b1.classList.add(sk.sets[0].aq > sk.sets[0].adv ? 'won' : 'lost');
-            b2.classList.add(sk.sets[1].aq > sk.sets[1].adv ? 'won' : 'lost');
-        }
+        var bubbles = [document.getElementById('skBub1'), document.getElementById('skBub2'), document.getElementById('skBub3')];
+        bubbles.forEach(function(b, i) {
+            b.className = 'sk-set-bubble';
+            if (i < sk.sets.length) {
+                b.classList.add(sk.sets[i].aq > sk.sets[i].adv ? 'won' : 'lost');
+            } else if (i === sk.sets.length && !sk.matchDone) {
+                b.classList.add('active');
+            }
+        });
     }
 
     function setDuration(setNum) {
@@ -1288,10 +1291,14 @@
             adv_set1: sk.sets.length >= 1 ? sk.sets[0].adv : null,
             aq_set2: sk.sets.length >= 2 ? sk.sets[1].aq : null,
             adv_set2: sk.sets.length >= 2 ? sk.sets[1].adv : null,
+            aq_set3: sk.sets.length >= 3 ? sk.sets[2].aq : null,
+            adv_set3: sk.sets.length >= 3 ? sk.sets[2].adv : null,
             set1_debut: ts.set1_debut || null,
             set1_fin: ts.set1_fin || null,
             set2_debut: ts.set2_debut || null,
-            set2_fin: ts.set2_fin || null
+            set2_fin: ts.set2_fin || null,
+            set3_debut: ts.set3_debut || null,
+            set3_fin: ts.set3_fin || null
         };
         if (sk.matchDone) {
             var setsWon = sk.sets.filter(function(s) { return s.aq > s.adv; }).length;
@@ -1327,7 +1334,7 @@
             sets: [],
             pointLog: [],
             matchDone: false,
-            setTimestamps: { set1_debut: null, set1_fin: null, set2_debut: null, set2_fin: null }
+            setTimestamps: { set1_debut: null, set1_fin: null, set2_debut: null, set2_fin: null, set3_debut: null, set3_fin: null }
         };
 
         document.getElementById('skAdvName').textContent = sk.advName;
@@ -1356,7 +1363,7 @@
 
     function skPoint(team) {
         if (!sk.matchNum || sk.matchDone) return;
-        if (sk.currentSet > 2) return;
+        if (sk.currentSet > 3) return;
 
         // Record set start on first point
         var tsKey = 'set' + sk.currentSet + '_debut';
@@ -1388,19 +1395,23 @@
 
     function skCheckSetEnd() {
         var aq = sk.aqScore, adv = sk.advScore;
-        if ((aq >= 25 || adv >= 25) && Math.abs(aq - adv) >= 2) {
+        var target = sk.currentSet === 3 ? 15 : 25;
+        if ((aq >= target || adv >= target) && Math.abs(aq - adv) >= 2) {
             // Record set end time
             sk.setTimestamps['set' + sk.currentSet + '_fin'] = new Date().toISOString();
             sk.sets.push({ aq: aq, adv: adv });
             skRenderSetHistory();
             skUpdateBubbles();
 
-            if (sk.sets.length >= 2) {
+            var setsWonAq = sk.sets.filter(function(s) { return s.aq > s.adv; }).length;
+            var setsWonAdv = sk.sets.length - setsWonAq;
+
+            if (setsWonAq >= 2 || setsWonAdv >= 2) {
                 sk.matchDone = true;
                 skShowResult();
                 skUpdateDisabled();
             } else {
-                sk.currentSet = 2;
+                sk.currentSet = sk.sets.length + 1;
                 sk.aqScore = 0;
                 sk.advScore = 0;
                 sk.pointLog = [];
@@ -1416,12 +1427,13 @@
         var won = setsWon > sk.sets.length - setsWon;
         var banner = document.getElementById('skResult');
         banner.className = 'sk-result-banner show ' + (won ? 'win-banner' : 'loss-banner');
-        var d1 = setDuration(1), d2 = setDuration(2);
-        var d1t = d1 ? ' (' + d1 + ')' : '', d2t = d2 ? ' (' + d2 + ')' : '';
+        var details = sk.sets.map(function(s, i) {
+            var dur = setDuration(i + 1);
+            return 'Set ' + (i + 1) + ': ' + s.aq + '-' + s.adv + (dur ? ' (' + dur + ')' : '');
+        }).join(' \u00b7 ');
         banner.innerHTML =
             '<div class="rt">' + (won ? 'Victoire!' : 'D\u00e9faite') + '</div>' +
-            '<div class="rd">Set 1: ' + sk.sets[0].aq + '-' + sk.sets[0].adv + d1t +
-            ' \u00b7 Set 2: ' + sk.sets[1].aq + '-' + sk.sets[1].adv + d2t + '</div>';
+            '<div class="rd">' + details + '</div>';
     }
 
     function skMinus(team) {
