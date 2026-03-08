@@ -136,17 +136,18 @@
         .bilan {
             display: flex;
             justify-content: center;
-            gap: 1.5rem;
-            padding: 1.2rem 1rem;
+            flex-wrap: wrap;
+            gap: 0.8rem 1.2rem;
+            padding: 1rem 1rem;
             background: var(--bg-light);
             border-bottom: 1px solid rgba(26,86,184,0.2);
         }
 
-        .bilan-item { text-align: center; }
+        .bilan-item { text-align: center; min-width: 3rem; }
 
         .bilan-number {
             font-family: 'Oswald', sans-serif;
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 700;
             line-height: 1;
         }
@@ -157,17 +158,15 @@
         .bilan-number.sets-l { color: var(--silver-dark); }
 
         .bilan-label {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             text-transform: uppercase;
-            letter-spacing: 0.15em;
+            letter-spacing: 0.1em;
             color: var(--gray);
             margin-top: 0.2rem;
         }
 
         .bilan-separator {
-            width: 1px;
-            background: rgba(26,86,184,0.25);
-            align-self: stretch;
+            display: none;
         }
 
         /* LIVE SCOREKEEPER */
