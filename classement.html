@@ -23,6 +23,36 @@
         .nav a { flex: 1; max-width: 200px; text-align: center; padding: 0.8rem 1rem; font-family: 'Oswald', sans-serif; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.15em; text-decoration: none; color: var(--silver-dark); border-bottom: 2px solid transparent; transition: all 0.3s; }
         .nav a:hover { color: var(--silver-light); }
         .nav a.active { color: var(--blue-light); border-bottom-color: var(--blue); }
+        .tournoi-selector {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            background: var(--bg-light);
+            border-bottom: 1px solid rgba(26,86,184,0.2);
+        }
+        .tournoi-btn {
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 0.4rem 1.2rem;
+            border-radius: 20px;
+            border: 1px solid rgba(26,86,184,0.3);
+            background: transparent;
+            color: var(--silver-dark);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tournoi-btn:hover {
+            color: var(--silver-light);
+            border-color: rgba(26,86,184,0.5);
+        }
+        .tournoi-btn.active {
+            background: var(--blue);
+            color: var(--white);
+            border-color: var(--blue);
+        }
         .content { max-width: 600px; margin: 0 auto; padding: 0 1rem 2rem; }
         .pool-card { background: var(--bg-card); border: 1px solid rgba(26,86,184,0.15); border-radius: 10px; margin-bottom: 1rem; overflow: hidden; }
         .pool-header { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 1rem; background: rgba(26,86,184,0.08); border-bottom: 1px solid rgba(26,86,184,0.15); }
@@ -76,7 +106,11 @@
         <a href="classement.html" class="active">Classement</a>
         <a href="stats.html">Stats</a>
     </div>
-    <div class="content">
+    <div class="tournoi-selector" id="tournoiSelector">
+        <button class="tournoi-btn" data-tournoi="cvs" onclick="switchTournoi('cvs')">CVS Alma</button>
+        <button class="tournoi-btn" data-tournoi="qca" onclick="switchTournoi('qca')">R&eacute;gional QCA</button>
+    </div>
+    <div class="content" id="content">
         <button class="refresh-btn" onclick="fetchAll()">Rafra&icirc;chir les donn&eacute;es</button>
         <div class="last-refresh" id="lastRefresh"></div>
         <div id="projection"></div>
@@ -94,6 +128,72 @@
     </div>
 
 <script>
+var TOURNOIS = {
+    cvs: {
+        id: 'a0000000-0000-0000-0000-000000000001',
+        nom: 'CVS Alma 2026',
+        slug: 'cvs',
+        equipe: 'Aquilons',
+        ecole: 'Jean-de-Brébeuf'
+    },
+    qca: {
+        id: 'a0000000-0000-0000-0000-000000000002',
+        nom: 'Régional QCA 2026',
+        slug: 'qca',
+        equipe: 'Aquilons',
+        ecole: 'Jean-de-Brébeuf'
+    }
+};
+
+function getTournoiActif() {
+    var params = new URLSearchParams(window.location.search);
+    var p = params.get('tournoi');
+    if (p && TOURNOIS[p]) return p;
+    var stored = localStorage.getItem('tournoi');
+    if (stored && TOURNOIS[stored]) return stored;
+    return 'cvs';
+}
+
+var tournoiActif = getTournoiActif();
+localStorage.setItem('tournoi', tournoiActif);
+
+function switchTournoi(slug) {
+    if (slug === tournoiActif) return;
+    tournoiActif = slug;
+    localStorage.setItem('tournoi', slug);
+
+    var url = new URL(window.location);
+    url.searchParams.set('tournoi', slug);
+    history.replaceState(null, '', url);
+
+    updateTournoiUI();
+
+    if (slug !== 'cvs') {
+        document.getElementById('content').innerHTML =
+            '<div style="text-align:center;padding:3rem 1rem;color:var(--gray);font-size:0.9rem;">Classement non disponible pour ce tournoi.<br><a href="index.html?tournoi=' + slug + '" style="color:var(--blue-light);text-decoration:none;margin-top:1rem;display:inline-block;">Voir les résultats</a></div>';
+    } else {
+        window.location.reload();
+    }
+}
+
+function updateTournoiUI() {
+    document.querySelectorAll('.tournoi-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.dataset.tournoi === tournoiActif);
+    });
+
+    var classementLink = document.querySelector('.nav a[href="classement.html"]');
+    if (classementLink) {
+        classementLink.style.display = (tournoiActif === 'cvs') ? '' : 'none';
+    }
+}
+
+updateTournoiUI();
+
+if (tournoiActif !== 'cvs') {
+    document.getElementById('content').innerHTML =
+        '<div style="text-align:center;padding:3rem 1rem;color:var(--gray);font-size:0.9rem;">Classement non disponible pour ce tournoi.<br><a href="index.html?tournoi=' + tournoiActif + '" style="color:var(--blue-light);text-decoration:none;margin-top:1rem;display:inline-block;">Voir les résultats</a></div>';
+}
+
 var SHEET_ID = '1TGb1tBMg2CB9lGfWd3uqxHAcxBW81zw4gSfdKCWH7A0';
 var GID_D2 = '927908034';
 var AQUILON_NAME = 'Aquilon (QC)';
