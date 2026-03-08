@@ -966,14 +966,16 @@
             nom: 'CVS Alma 2026',
             slug: 'cvs',
             equipe: 'Aquilons',
-            ecole: 'Jean-de-Brébeuf'
+            ecole: 'Jean-de-Brébeuf',
+            detail: 'Alma \u00b7 7 mars 2026 \u00b7 2 sets de 25 pts'
         },
         qca: {
             id: 'a0000000-0000-0000-0000-000000000002',
             nom: 'Régional QCA 2026',
             slug: 'qca',
             equipe: 'Aquilons',
-            ecole: 'Jean-de-Brébeuf'
+            ecole: 'Jean-de-Brébeuf',
+            detail: '2 sets de 25 pts'
         }
     };
 
@@ -1256,7 +1258,7 @@
     };
 
     var matchDbId = null;
-    var SK_KEY = 'aquilons-match-state';
+    var SK_KEY = 'aquilons-sk-' + tournoiActif;
 
     function skSave() {
         try { localStorage.setItem(SK_KEY, JSON.stringify(sk)); } catch(e) {}
@@ -1790,6 +1792,7 @@
         tournoiActif = slug;
         TOURNOI_ID = TOURNOIS[slug].id;
         localStorage.setItem('tournoi', slug);
+        SK_KEY = 'aquilons-sk-' + slug;
 
         // Update URL without reload
         var url = new URL(window.location);
@@ -1822,6 +1825,8 @@
         var t = TOURNOIS[tournoiActif];
         var tourNameEl = document.querySelector('.tourney-name');
         if (tourNameEl) tourNameEl.textContent = t.nom;
+        var tourDetailEl = document.querySelector('.tourney-detail');
+        if (tourDetailEl) tourDetailEl.textContent = t.detail;
 
         // Nav: hide/show classement link
         var classementLink = document.querySelector('.nav a[href="classement.html"]');
