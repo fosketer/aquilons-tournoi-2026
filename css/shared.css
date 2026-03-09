@@ -1,0 +1,299 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
+
+/* ============================================
+   CSS VARIABLES
+   ============================================ */
+:root {
+    --blue: #1A56B8;
+    --blue-light: #3A76D8;
+    --blue-dark: #0E3A80;
+    --silver: #A8A9AD;
+    --silver-light: #C8C9CD;
+    --silver-dark: #78797D;
+    --bg: #0C1220;
+    --bg-light: #121C30;
+    --bg-card: #101828;
+    --gray: #8090A8;
+    --white: #EDF0F5;
+    --win: #4CAF50;
+    --loss: #E53935;
+    --gold: #FFD700;
+}
+
+/* ============================================
+   RESET & BODY
+   ============================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+.header {
+    background: linear-gradient(135deg, var(--bg) 0%, var(--bg-light) 50%, var(--bg) 100%);
+    border-bottom: 3px solid var(--blue);
+    padding: 2rem 1rem 1.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at center, rgba(26,86,184,0.08) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+.header-logo {
+    width: 120px;
+    height: auto;
+    margin-bottom: 0.5rem;
+    filter: drop-shadow(0 0 20px rgba(26,86,184,0.4));
+}
+
+.team-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    background: linear-gradient(180deg, var(--silver-light) 0%, var(--silver) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.team-sub {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.95rem;
+    color: var(--blue-light);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-top: 0.2rem;
+}
+
+.tournament-info {
+    margin-top: 1rem;
+    padding: 0.7rem 1.5rem;
+    background: rgba(26,86,184,0.1);
+    border: 1px solid rgba(26,86,184,0.25);
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.tournament-info .tourney-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.1rem;
+    color: var(--silver-light);
+    letter-spacing: 0.1em;
+}
+
+.tournament-info .tourney-detail {
+    font-size: 0.8rem;
+    color: var(--gray);
+    margin-top: 0.2rem;
+}
+
+/* ============================================
+   NAV
+   ============================================ */
+.nav {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    background: var(--bg-light);
+    border-bottom: 1px solid rgba(26,86,184,0.2);
+}
+
+.nav a {
+    flex: 1;
+    max-width: 200px;
+    text-align: center;
+    padding: 0.8rem 1rem;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    text-decoration: none;
+    color: var(--silver-dark);
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.nav a:hover { color: var(--silver-light); }
+.nav a.active { color: var(--blue-light); border-bottom-color: var(--blue); }
+
+/* ============================================
+   TOURNOI SELECTOR
+   ============================================ */
+.tournoi-selector {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: var(--bg-light);
+    border-bottom: 1px solid rgba(26,86,184,0.2);
+}
+
+.tournoi-btn {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.4rem 1.2rem;
+    border-radius: 20px;
+    border: 1px solid rgba(26,86,184,0.3);
+    background: transparent;
+    color: var(--silver-dark);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tournoi-btn:hover {
+    color: var(--silver-light);
+    border-color: rgba(26,86,184,0.5);
+}
+
+.tournoi-btn.active {
+    background: var(--blue);
+    color: var(--white);
+    border-color: var(--blue);
+}
+
+/* ============================================
+   CONTENT CONTAINER
+   ============================================ */
+.content {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 1rem 1rem 3rem;
+}
+
+/* ============================================
+   SECTION TITLE (with decorative lines)
+   ============================================ */
+.section-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--blue-light);
+    text-align: center;
+    margin: 1.5rem 0 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.section-title::before,
+.section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(26,86,184,0.35), transparent);
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    font-size: 0.7rem;
+    color: rgba(128,144,168,0.4);
+    border-top: 1px solid rgba(26,86,184,0.1);
+    margin-top: 1rem;
+}
+
+/* ============================================
+   UTILITY: LOADING SPINNER
+   ============================================ */
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    color: var(--gray);
+    font-size: 0.85rem;
+    gap: 1rem;
+}
+
+.loading::before {
+    content: '';
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid rgba(26,86,184,0.15);
+    border-top-color: var(--blue-light);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   UTILITY: ERROR BANNER
+   ============================================ */
+.error-banner {
+    background: linear-gradient(135deg, rgba(229,57,53,0.12), rgba(229,57,53,0.04));
+    border: 1px solid rgba(229,57,53,0.25);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    margin: 1rem 0;
+    font-size: 0.8rem;
+    color: var(--loss);
+    text-align: center;
+}
+
+/* ============================================
+   UTILITY: EMPTY STATE
+   ============================================ */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--gray);
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+/* ============================================
+   UTILITY: RETRY BUTTON
+   ============================================ */
+.retry-btn {
+    display: inline-block;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.5rem 1.5rem;
+    border-radius: 8px;
+    border: 1px solid rgba(26,86,184,0.3);
+    background: var(--bg-card);
+    color: var(--gray);
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 0.8rem;
+}
+
+.retry-btn:hover {
+    color: var(--white);
+    border-color: rgba(26,86,184,0.5);
+    background: rgba(26,86,184,0.1);
+}
+
+.retry-btn:active {
+    transform: scale(0.95);
+}
