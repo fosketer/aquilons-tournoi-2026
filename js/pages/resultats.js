@@ -1,6 +1,7 @@
 // js/pages/resultats.js
 import { getTournoiActif, getTournoiConfig, setTournoiActif, listTournois } from '../config.js';
 import { getClient, fetchRows, subscribe, removeAllChannels } from '../lib/supabase.js';
+import { createEngine } from '../lib/scorekeeper-engine.js';
 import { fetchSheet } from '../lib/sheets.js';
 import { showLoading, showError } from '../lib/ui.js';
 import '../components/app-header.js';
@@ -13,7 +14,7 @@ var cleanup = null;
 // PAGE HTML STRUCTURE
 // ==========================================
 
-function buildPageHTML() {
+function buildPageHTML(maxSets) {
     return '' +
         '<!-- BILAN -->' +
         '<div class="bilan">' +
@@ -56,9 +57,7 @@ function buildPageHTML() {
             '<div class="sk-panel" id="skPanel">' +
                 '<div class="sk-set-indicator">' +
                     '<span class="sk-set-label">Sets</span>' +
-                    '<div class="sk-set-bubble active" id="skBub1">1</div>' +
-                    '<div class="sk-set-bubble" id="skBub2">2</div>' +
-                    '<div class="sk-set-bubble" id="skBub3">3</div>' +
+                    (function() { var h=''; for(var i=1;i<=maxSets;i++) h+='<div class="sk-set-bubble'+(i===1?' active':'')+'" id="skBub'+i+'">'+i+'</div>'; return h; })() +
                 '</div>' +
                 '<div class="sk-scoreboard" id="skScoreboard">' +
                     '<div class="sk-side aq" id="skSideAq">' +
@@ -265,43 +264,42 @@ function updateBilan(matchs) {
 // SCOREKEEPER STATE
 // ==========================================
 
-var sk = {
-    matchNum: null,
-    advName: '',
-    currentSet: 1,
-    aqScore: 0,
-    advScore: 0,
-    sets: [],
-    pointLog: [],
-    matchDone: false,
-    setTimestamps: { set1_debut: null, set1_fin: null, set2_debut: null, set2_fin: null, set3_debut: null, set3_fin: null }
-};
-
+var engine = null;
+var skSession = { matchNum: null, advName: '' };
 var matchDbId = null;
 var SK_KEY = 'aquilons-sk-cvs';
 var currentConfig = null;
 
 function skSave() {
-    try { localStorage.setItem(SK_KEY, JSON.stringify(sk)); } catch(e) {}
+    try {
+        localStorage.setItem(SK_KEY, JSON.stringify({
+            matchNum: skSession.matchNum,
+            advName: skSession.advName,
+            engine: engine ? engine.getState() : null
+        }));
+    } catch(e) {}
 }
 
 function skLoad() {
     try {
         var s = localStorage.getItem(SK_KEY);
-        if (s) {
-            sk = JSON.parse(s);
-            if (sk.matchNum) {
-                document.getElementById('skMatchSelect').value = sk.matchNum;
-                document.getElementById('skAdvName').textContent = sk.advName;
-                document.getElementById('skAdvInfo').textContent = advInfoText(sk.advName);
-                document.getElementById('skPanel').classList.add('show');
-                skApplyUI();
-                getClient().from('matchs').select('id')
-                    .eq('tournoi_id', currentConfig.id)
-                    .eq('numero', parseInt(sk.matchNum))
-                    .single()
-                    .then(function(res) { if (res.data) matchDbId = res.data.id; });
-            }
+        if (!s) return;
+        var saved = JSON.parse(s);
+        skSession.matchNum = saved.matchNum;
+        skSession.advName = saved.advName;
+        if (saved.engine && engine) engine.loadState(saved.engine);
+
+        if (skSession.matchNum) {
+            document.getElementById('skMatchSelect').value = skSession.matchNum;
+            document.getElementById('skAdvName').textContent = skSession.advName;
+            document.getElementById('skAdvInfo').textContent = advInfoText(skSession.advName);
+            document.getElementById('skPanel').classList.add('show');
+            skApplyUI();
+            getClient().from('matchs').select('id')
+                .eq('tournoi_id', currentConfig.id)
+                .eq('numero', parseInt(skSession.matchNum))
+                .single()
+                .then(function(res) { if (res.data) matchDbId = res.data.id; });
         }
     } catch(e) {}
 }
@@ -311,52 +309,45 @@ function skLoad() {
 // ==========================================
 
 function skApplyUI() {
-    document.getElementById('skScoreAq').textContent = sk.aqScore;
-    document.getElementById('skScoreAdv').textContent = sk.advScore;
-    skUpdateBubbles();
-    skRenderSetHistory();
-    if (sk.matchDone) skShowResult();
+    var st = engine.getState();
+    document.getElementById('skScoreAq').textContent = st.aqScore;
+    document.getElementById('skScoreAdv').textContent = st.advScore;
+    skUpdateBubbles(st);
+    skRenderSetHistory(st);
+    if (st.matchDone) skShowResult(st);
     skUpdateDisabled();
 }
 
-function skUpdateBubbles() {
-    var bubbles = [document.getElementById('skBub1'), document.getElementById('skBub2'), document.getElementById('skBub3')];
-    bubbles.forEach(function(b, i) {
+function skUpdateBubbles(st) {
+    var max = engine.getMaxSets();
+    for (var i = 0; i < max; i++) {
+        var b = document.getElementById('skBub' + (i + 1));
+        if (!b) continue;
         b.className = 'sk-set-bubble';
-        if (i < sk.sets.length) {
-            b.classList.add(sk.sets[i].aq > sk.sets[i].adv ? 'won' : 'lost');
-        } else if (i === sk.sets.length && !sk.matchDone) {
+        if (i < st.sets.length) {
+            b.classList.add(st.sets[i].aq > st.sets[i].adv ? 'won' : 'lost');
+        } else if (i === st.sets.length && !st.matchDone) {
             b.classList.add('active');
         }
-    });
+    }
 }
 
-function setDuration(setNum) {
-    var ts = sk.setTimestamps || {};
-    var debut = ts['set' + setNum + '_debut'];
-    var fin = ts['set' + setNum + '_fin'];
-    if (!debut || !fin) return '';
-    var ms = new Date(fin) - new Date(debut);
-    var mins = Math.floor(ms / 60000);
-    var secs = Math.floor((ms % 60000) / 1000);
-    return mins + ':' + String(secs).padStart(2, '0');
-}
-
-function skRenderSetHistory() {
-    document.getElementById('skSetHistory').innerHTML = sk.sets.map(function(s, i) {
+function skRenderSetHistory(st) {
+    document.getElementById('skSetHistory').innerHTML = st.sets.map(function(s, i) {
         var won = s.aq > s.adv;
-        var dur = setDuration(i + 1);
+        var dur = engine.setDuration(i + 1);
         var durHtml = dur ? ' <span style="font-size:0.6rem;color:var(--gray);font-weight:400">(' + dur + ')</span>' : '';
         return '<div class="sk-set-result">' +
             '<span class="sn">Set ' + (i + 1) + '</span>' +
             '<span class="ss ' + (won ? 'won' : 'lost') + '">' + s.aq + ' - ' + s.adv + durHtml + '</span>' +
-            '<span class="sw ' + (won ? 'aq' : 'adv') + '">' + (won ? 'Aquilons' : sk.advName) + '</span>' +
+            '<span class="sw ' + (won ? 'aq' : 'adv') + '">' + (won ? 'Aquilons' : skSession.advName) + '</span>' +
         '</div>';
     }).join('');
 }
 
 function skUpdateDisabled() {
-    var disabled = !sk.matchNum || sk.matchDone;
+    var st = engine.getState();
+    var disabled = !skSession.matchNum || st.matchDone;
     document.getElementById('skScoreboard').className = 'sk-scoreboard' + (disabled ? ' disabled' : '');
     document.getElementById('skMinusRow').className = 'sk-minus-row' + (disabled ? ' disabled' : '');
     document.getElementById('skControls').className = 'sk-controls' + (disabled ? ' disabled' : '');
@@ -373,19 +364,20 @@ function skSetSync(text, cls) {
 // ==========================================
 
 function skSync() {
-    if (!matchDbId) return;
+    if (!matchDbId || !engine) return;
     var sb = getClient();
-    var ts = sk.setTimestamps || {};
+    var st = engine.getState();
+    var ts = st.setTimestamps;
     var updates = {
-        aq_score_courant: sk.aqScore,
-        adv_score_courant: sk.advScore,
-        set_courant: sk.currentSet,
-        aq_set1: sk.sets.length >= 1 ? sk.sets[0].aq : null,
-        adv_set1: sk.sets.length >= 1 ? sk.sets[0].adv : null,
-        aq_set2: sk.sets.length >= 2 ? sk.sets[1].aq : null,
-        adv_set2: sk.sets.length >= 2 ? sk.sets[1].adv : null,
-        aq_set3: sk.sets.length >= 3 ? sk.sets[2].aq : null,
-        adv_set3: sk.sets.length >= 3 ? sk.sets[2].adv : null,
+        aq_score_courant: st.aqScore,
+        adv_score_courant: st.advScore,
+        set_courant: st.currentSet,
+        aq_set1: st.sets.length >= 1 ? st.sets[0].aq : null,
+        adv_set1: st.sets.length >= 1 ? st.sets[0].adv : null,
+        aq_set2: st.sets.length >= 2 ? st.sets[1].aq : null,
+        adv_set2: st.sets.length >= 2 ? st.sets[1].adv : null,
+        aq_set3: st.sets.length >= 3 ? st.sets[2].aq : null,
+        adv_set3: st.sets.length >= 3 ? st.sets[2].adv : null,
         set1_debut: ts.set1_debut || null,
         set1_fin: ts.set1_fin || null,
         set2_debut: ts.set2_debut || null,
@@ -393,9 +385,9 @@ function skSync() {
         set3_debut: ts.set3_debut || null,
         set3_fin: ts.set3_fin || null
     };
-    if (sk.matchDone) {
-        var setsWon = sk.sets.filter(function(s) { return s.aq > s.adv; }).length;
-        var setsLost = sk.sets.length - setsWon;
+    if (st.matchDone) {
+        var setsWon = st.sets.filter(function(s) { return s.aq > s.adv; }).length;
+        var setsLost = st.sets.length - setsWon;
         updates.statut = setsWon > setsLost ? 'win' : setsWon < setsLost ? 'loss' : 'draw';
         updates.set_courant = 0;
     } else {
@@ -419,27 +411,19 @@ function skSelectMatch() {
         return;
     }
 
-    sk = {
-        matchNum: opt.value,
-        advName: opt.dataset.adv,
-        currentSet: 1,
-        aqScore: 0,
-        advScore: 0,
-        sets: [],
-        pointLog: [],
-        matchDone: false,
-        setTimestamps: { set1_debut: null, set1_fin: null, set2_debut: null, set2_fin: null, set3_debut: null, set3_fin: null }
-    };
+    skSession.matchNum = opt.value;
+    skSession.advName = opt.dataset.adv;
+    engine.reset();
 
-    document.getElementById('skAdvName').textContent = sk.advName;
-    document.getElementById('skAdvInfo').textContent = advInfoText(sk.advName);
+    document.getElementById('skAdvName').textContent = skSession.advName;
+    document.getElementById('skAdvInfo').textContent = advInfoText(skSession.advName);
     document.getElementById('skScoreAq').textContent = '0';
     document.getElementById('skScoreAdv').textContent = '0';
     document.getElementById('skSetHistory').innerHTML = '';
     document.getElementById('skResult').className = 'sk-result-banner';
     document.getElementById('skResult').innerHTML = '';
     document.getElementById('skPanel').classList.add('show');
-    skUpdateBubbles();
+    skUpdateBubbles(engine.getState());
     skUpdateDisabled();
     skSave();
 
@@ -457,73 +441,45 @@ function skSelectMatch() {
 }
 
 function skPoint(team) {
-    if (!sk.matchNum || sk.matchDone) return;
-    if (sk.currentSet > 3) return;
+    if (!skSession.matchNum) return;
+    var result = engine.addPoint(team);
+    if (!result) return;
 
-    // Record set start on first point
-    var tsKey = 'set' + sk.currentSet + '_debut';
-    if (!sk.setTimestamps[tsKey]) {
-        sk.setTimestamps[tsKey] = new Date().toISOString();
-    }
+    var st = engine.getState();
+    document.getElementById('skScoreAq').textContent = st.aqScore;
+    document.getElementById('skScoreAdv').textContent = st.advScore;
 
-    if (team === 'aq') sk.aqScore++;
-    else sk.advScore++;
-    sk.pointLog.push(team);
-
-    document.getElementById('skScoreAq').textContent = sk.aqScore;
-    document.getElementById('skScoreAdv').textContent = sk.advScore;
-
+    // Insert point to Supabase (use scores from result, before potential set reset)
     if (matchDbId) {
         getClient().from('points').insert({
             match_id: matchDbId,
-            set_num: sk.currentSet,
+            set_num: result.set,
             equipe: team,
-            aq_score: sk.aqScore,
-            adv_score: sk.advScore
+            aq_score: result.aqScore,
+            adv_score: result.advScore
         }).then(function() {});
     }
 
-    skCheckSetEnd();
+    if (result.setEnded) {
+        skRenderSetHistory(st);
+        skUpdateBubbles(st);
+        if (result.matchEnded) {
+            skShowResult(st);
+            skUpdateDisabled();
+        }
+    }
+
     skSave();
     skSync();
 }
 
-function skCheckSetEnd() {
-    var aq = sk.aqScore, adv = sk.advScore;
-    var target = sk.currentSet === 3 ? 15 : 25;
-    if ((aq >= target || adv >= target) && Math.abs(aq - adv) >= 2) {
-        // Record set end time
-        sk.setTimestamps['set' + sk.currentSet + '_fin'] = new Date().toISOString();
-        sk.sets.push({ aq: aq, adv: adv });
-        skRenderSetHistory();
-        skUpdateBubbles();
-
-        var setsWonAq = sk.sets.filter(function(s) { return s.aq > s.adv; }).length;
-        var setsWonAdv = sk.sets.length - setsWonAq;
-
-        if (setsWonAq >= 2 || setsWonAdv >= 2) {
-            sk.matchDone = true;
-            skShowResult();
-            skUpdateDisabled();
-        } else {
-            sk.currentSet = sk.sets.length + 1;
-            sk.aqScore = 0;
-            sk.advScore = 0;
-            sk.pointLog = [];
-            document.getElementById('skScoreAq').textContent = '0';
-            document.getElementById('skScoreAdv').textContent = '0';
-            skUpdateBubbles();
-        }
-    }
-}
-
-function skShowResult() {
-    var setsWon = sk.sets.filter(function(s) { return s.aq > s.adv; }).length;
-    var won = setsWon > sk.sets.length - setsWon;
+function skShowResult(st) {
+    var setsWon = st.sets.filter(function(s) { return s.aq > s.adv; }).length;
+    var won = setsWon > st.sets.length - setsWon;
     var banner = document.getElementById('skResult');
     banner.className = 'sk-result-banner show ' + (won ? 'win-banner' : 'loss-banner');
-    var details = sk.sets.map(function(s, i) {
-        var dur = setDuration(i + 1);
+    var details = st.sets.map(function(s, i) {
+        var dur = engine.setDuration(i + 1);
         return 'Set ' + (i + 1) + ': ' + s.aq + '-' + s.adv + (dur ? ' (' + dur + ')' : '');
     }).join(' \u00b7 ');
     banner.innerHTML =
@@ -532,20 +488,12 @@ function skShowResult() {
 }
 
 function skMinus(team) {
-    if (!sk.matchNum || sk.matchDone) return;
-    if (team === 'aq' && sk.aqScore <= 0) return;
-    if (team === 'adv' && sk.advScore <= 0) return;
+    if (!skSession.matchNum) return;
+    if (!engine.undoPoint(team)) return;
 
-    if (team === 'aq') sk.aqScore--;
-    else sk.advScore--;
-
-    // Remove last occurrence of this team from pointLog
-    for (var i = sk.pointLog.length - 1; i >= 0; i--) {
-        if (sk.pointLog[i] === team) { sk.pointLog.splice(i, 1); break; }
-    }
-
-    document.getElementById('skScoreAq').textContent = sk.aqScore;
-    document.getElementById('skScoreAdv').textContent = sk.advScore;
+    var st = engine.getState();
+    document.getElementById('skScoreAq').textContent = st.aqScore;
+    document.getElementById('skScoreAdv').textContent = st.advScore;
     skSave();
 
     if (matchDbId) {
@@ -563,20 +511,17 @@ function skMinus(team) {
 }
 
 function skResetSet() {
-    if (!sk.matchNum || sk.matchDone) return;
+    if (!skSession.matchNum) return;
     if (!confirm('Remettre le set \u00e0 z\u00e9ro?')) return;
-    sk.aqScore = 0;
-    sk.advScore = 0;
-    sk.pointLog = [];
-    sk.setTimestamps['set' + sk.currentSet + '_debut'] = null;
-    sk.setTimestamps['set' + sk.currentSet + '_fin'] = null;
+    var setNum = engine.getState().currentSet;
+    engine.resetSet();
     document.getElementById('skScoreAq').textContent = '0';
     document.getElementById('skScoreAdv').textContent = '0';
     skSave();
 
     if (matchDbId) {
         var sbClient = getClient();
-        sbClient.from('points').delete().eq('match_id', matchDbId).eq('set_num', sk.currentSet).then(function() {});
+        sbClient.from('points').delete().eq('match_id', matchDbId).eq('set_num', setNum).then(function() {});
         skSync();
     }
 }
@@ -783,8 +728,11 @@ async function init(slug) {
         var cfg = config.config || {};
         SK_KEY = 'aquilons-sk-' + slug;
 
+        // Create scorekeeper engine with tournament rules
+        engine = createEngine(cfg.scorekeeper || {});
+
         // Build page structure
-        app.innerHTML = buildPageHTML();
+        app.innerHTML = buildPageHTML(engine.getMaxSets());
 
         // Update footer
         document.getElementById('pageFooter').innerHTML = 'Aquilons \u00b7 Jean de Br\u00e9beuf \u00b7 ' + config.nom;
