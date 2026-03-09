@@ -1,0 +1,206 @@
+/* ============================================
+   CLASSEMENT PAGE — page-specific styles
+   ============================================ */
+
+/* ============================================
+   POOL CARDS
+   ============================================ */
+.pool-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(26,86,184,0.15);
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.pool-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    background: rgba(26,86,184,0.08);
+    border-bottom: 1px solid rgba(26,86,184,0.15);
+}
+
+.pool-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--blue-light);
+}
+
+.pool-status {
+    font-size: 0.6rem;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* ============================================
+   POOL TABLE
+   ============================================ */
+.pool-table { width: 100%; border-collapse: collapse; }
+
+.pool-table th {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gray);
+    padding: 0.4rem 0.5rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(26,86,184,0.1);
+}
+
+.pool-table th:first-child { text-align: left; padding-left: 1rem; }
+.pool-table th.rg { color: var(--blue-light); }
+
+.pool-table td {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.5rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(26,86,184,0.06);
+}
+
+.pool-table td:first-child { text-align: left; padding-left: 1rem; font-weight: 500; }
+.pool-table tr:last-child td { border-bottom: none; }
+
+.pool-table tr.highlight { background: rgba(26,86,184,0.06); }
+.pool-table tr.highlight td:first-child { color: var(--blue-light); font-weight: 600; }
+
+.pool-table .rg-cell {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--blue-light);
+}
+
+.pool-table .ratio { font-size: 0.7rem; color: var(--gray); }
+.pool-table .no-data { color: var(--silver-dark); font-size: 0.7rem; }
+
+/* ============================================
+   MATCH LIST (inside pool cards)
+   ============================================ */
+.match-list {
+    padding: 0.5rem 1rem 0.8rem;
+    border-top: 1px solid rgba(26,86,184,0.08);
+}
+
+.match-list-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gray);
+    margin-bottom: 0.3rem;
+}
+
+.ml-row {
+    display: flex;
+    align-items: center;
+    padding: 0.2rem 0;
+    font-size: 0.7rem;
+}
+
+.ml-team { flex: 1; }
+.ml-team.right { text-align: right; }
+.ml-team.aq { color: var(--blue-light); font-weight: 600; }
+
+.ml-sets {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    padding: 0 0.4rem;
+    min-width: 3rem;
+    text-align: center;
+}
+
+.ml-sets .w { color: var(--win); }
+.ml-sets .l { color: var(--loss); }
+
+.ml-detail {
+    color: var(--gray);
+    font-size: 0.6rem;
+    text-align: center;
+    min-width: 5rem;
+}
+
+/* ============================================
+   PROJECTION CARD
+   ============================================ */
+.proj-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(76,175,80,0.25);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.proj-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--win);
+    margin-bottom: 0.4rem;
+}
+
+.proj-line { font-size: 0.8rem; line-height: 1.6; }
+.proj-line .hl { color: var(--blue-light); font-weight: 600; }
+.proj-line .detail { color: var(--gray); font-size: 0.7rem; }
+
+/* ============================================
+   BRACKET LINKS
+   ============================================ */
+.bracket-link {
+    display: block;
+    text-align: center;
+    padding: 0.8rem;
+    margin-top: 0.5rem;
+    background: var(--bg-card);
+    border: 1px solid rgba(26,86,184,0.15);
+    border-radius: 10px;
+    color: var(--blue-light);
+    text-decoration: none;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+}
+
+.bracket-link:hover {
+    background: rgba(26,86,184,0.1);
+    border-color: rgba(26,86,184,0.4);
+}
+
+/* ============================================
+   REFRESH BUTTON & TIMESTAMP
+   ============================================ */
+.refresh-btn {
+    display: block;
+    margin: 1rem auto;
+    padding: 0.5rem 1.5rem;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-radius: 8px;
+    border: 1px solid rgba(26,86,184,0.2);
+    background: var(--bg-card);
+    color: var(--gray);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+    color: var(--white);
+    border-color: rgba(26,86,184,0.4);
+}
+
+.last-refresh {
+    text-align: center;
+    font-size: 0.6rem;
+    color: var(--gray);
+    margin-top: 0.3rem;
+}
