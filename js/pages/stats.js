@@ -277,11 +277,39 @@ async function init(slug) {
 
         var regions = [];
 
-        // Load tourney teams from Supabase
-        var teamsData = await fetchRows('adversaires', { tournoi_id: config.id }, { order: 'nom_tournoi' });
-        if (teamsData) {
-            renderTourneyTeams(teamsData, document.getElementById('tourneyBody'));
-        }
+        // Source de vérité = matchs (contre qui on joue)
+        // Enrichissement = adversaires (région, rang, stats RSEQ)
+        var results = await Promise.all([
+            fetchRows('adversaires', { tournoi_id: config.id }),
+            fetchRows('matchs', { tournoi_id: config.id }, { select: 'adversaire' })
+        ]);
+        var advLookup = {};
+        (results[0] || []).forEach(function(a) { advLookup[a.nom_tournoi] = a; });
+
+        // Extraire les adversaires distincts depuis matchs
+        var seen = {};
+        var teamsData = [];
+        (results[1] || []).forEach(function(m) {
+            var name = m.adversaire;
+            if (!name || seen[name]) return;
+            seen[name] = true;
+            var enriched = advLookup[name] || {};
+            teamsData.push({
+                nom_tournoi: name,
+                nom_officiel: enriched.nom_officiel || null,
+                ecole: enriched.ecole || null,
+                region_rseq: enriched.region_rseq || null,
+                rang_regional: enriched.rang_regional || null,
+                matchs_joues: enriched.matchs_joues || null,
+                sets_gagnes: enriched.sets_gagnes || null,
+                sets_perdus: enriched.sets_perdus || null,
+                points_pour: enriched.points_pour || null,
+                points_contre: enriched.points_contre || null
+            });
+        });
+        teamsData.sort(function(a, b) { return a.nom_tournoi.localeCompare(b.nom_tournoi); });
+
+        renderTourneyTeams(teamsData, document.getElementById('tourneyBody'));
 
         // Fetch QCA from Google Sheets + RSEQ leagues in parallel
         var qcaPromise = qcaCfg
