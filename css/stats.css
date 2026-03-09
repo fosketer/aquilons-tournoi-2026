@@ -1,0 +1,177 @@
+/* ============================================
+   STATS PAGE — page-specific styles
+   ============================================ */
+
+/* Section subtitle */
+.section-sub {
+    font-size: 0.7rem;
+    color: var(--gray);
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    text-transform: none;
+}
+
+/* ============================================
+   TOURNAMENT TEAMS TABLE
+   ============================================ */
+.tourney-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.5rem;
+}
+
+.tourney-table th {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gray);
+    padding: 0.4rem 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(26,86,184,0.15);
+}
+
+.tourney-table th.num { text-align: center; width: 2rem; }
+.tourney-table th.stat { text-align: center; }
+
+.tourney-table td {
+    font-size: 0.75rem;
+    padding: 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    vertical-align: middle;
+}
+
+.tourney-table td.num { text-align: center; color: var(--gray); }
+.tourney-table td.stat { text-align: center; }
+
+.tourney-table tr.is-aquilon td { background: rgba(26,86,184,0.08); }
+.tourney-table tr.is-aquilon td:first-child { border-left: 3px solid var(--blue); }
+
+/* Team cell sub-elements */
+.team-cell-name { font-weight: 600; }
+.team-cell-school {
+    font-size: 0.6rem;
+    color: var(--silver-dark);
+    font-style: italic;
+    display: block;
+    margin-top: 0.1rem;
+}
+.team-cell-region { font-size: 0.6rem; color: var(--gray); }
+.team-cell-rank { font-weight: 600; color: var(--silver-light); }
+.rank-1 { color: var(--gold); }
+
+/* Stat cell variants */
+.stat-good { color: var(--win); font-weight: 600; }
+.stat-bad { color: var(--loss); font-weight: 600; }
+.stat-na { color: var(--silver-dark); font-size: 0.65rem; }
+
+/* ============================================
+   REGIONAL TABLES
+   ============================================ */
+.region-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(26,86,184,0.15);
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.region-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    background: rgba(26,86,184,0.08);
+    border-bottom: 1px solid rgba(26,86,184,0.15);
+}
+
+.region-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--blue-light);
+}
+
+.region-info { font-size: 0.6rem; color: var(--gray); }
+
+.region-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.region-table th {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray);
+    padding: 0.3rem 0.4rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(26,86,184,0.1);
+    font-family: 'Oswald', sans-serif;
+}
+
+.region-table th:first-child { text-align: center; width: 1.8rem; }
+.region-table th:nth-child(2) { text-align: left; }
+
+.region-table td {
+    font-size: 0.7rem;
+    padding: 0.35rem 0.4rem;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    text-align: center;
+}
+
+.region-table td:nth-child(2) { text-align: left; font-weight: 500; }
+.region-table tr.highlight td { background: rgba(26,86,184,0.1); }
+.region-table tr.highlight td:first-child { border-left: 3px solid var(--blue); }
+
+/* No data placeholder */
+.no-data {
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--gray);
+    font-style: italic;
+}
+
+/* ============================================
+   REGION TABS
+   ============================================ */
+.region-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.5rem 0;
+    margin-bottom: 0.5rem;
+}
+
+.region-tab {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    border: 1px solid rgba(26,86,184,0.2);
+    background: var(--bg-card);
+    color: var(--gray);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.region-tab:hover { color: var(--white); border-color: rgba(26,86,184,0.4); }
+.region-tab.active { background: var(--blue); color: var(--white); border-color: var(--blue); }
+
+.region-section { display: none; }
+.region-section.show { display: block; }
+
+/* Region source link */
+.region-source {
+    font-size: 0.6rem;
+    color: var(--silver-dark);
+    text-align: right;
+    padding: 0.3rem 0.6rem;
+}
+
+.region-source a { color: var(--gray); text-decoration: none; }
+.region-source a:hover { color: var(--blue-light); }
