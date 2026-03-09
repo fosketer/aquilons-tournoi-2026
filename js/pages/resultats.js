@@ -1,7 +1,7 @@
 // js/pages/resultats.js
 import { getTournoiActif, getTournoiConfig, setTournoiActif, listTournois } from '../config.js';
 import { getClient, fetchRows, subscribe, removeAllChannels } from '../lib/supabase.js';
-import { parseCSV, fetchSheet } from '../lib/sheets.js';
+import { fetchSheet } from '../lib/sheets.js';
 import { showLoading, showError } from '../lib/ui.js';
 import '../components/app-header.js';
 import '../components/match-card.js';

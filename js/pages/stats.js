@@ -3,7 +3,7 @@ import { getTournoiActif, getTournoiConfig, setTournoiActif, listTournois } from
 import { fetchRows } from '../lib/supabase.js';
 import { fetchLeague, buildRegion } from '../lib/rseq.js';
 import { fetchCSV } from '../lib/sheets.js';
-import { showLoading, showError, showEmpty } from '../lib/ui.js';
+import { showLoading, showError } from '../lib/ui.js';
 import '../components/app-header.js';
 
 const app = document.getElementById('app');
