@@ -2,7 +2,7 @@
 import { getTournoiActif, getTournoiConfig, setTournoiActif, listTournois } from '../config.js';
 import { fetchRows } from '../lib/supabase.js';
 import { fetchLeague, buildRegion } from '../lib/rseq.js';
-import { fetchCSV } from '../lib/sheets.js';
+import { fetchCSV, parseCSV } from '../lib/sheets.js';
 import { showLoading, showError } from '../lib/ui.js';
 import '../components/app-header.js';
 
@@ -61,7 +61,7 @@ function fetchQCAStandings(qcaConfig) {
     var cols = qcaConfig.columns;
     return fetchCSV(url)
         .then(function(csv) {
-            var lines = csv.split('\n');
+            var lines = parseCSV(csv);
             var region = {
                 id: 'qca',
                 name: 'QCA (Qu\u00e9bec-Chaudi\u00e8re-Appalaches)',
@@ -79,7 +79,7 @@ function fetchQCAStandings(qcaConfig) {
             var colTotal = (cols && cols.total != null) ? cols.total : 11;
 
             for (var i = startLine; i < lines.length; i++) {
-                var c = lines[i].split(',');
+                var c = lines[i];
                 var rang = (c[colRang] || '').trim();
                 var equipe = (c[colEquipe] || '').trim();
                 if (!rang || !equipe) continue;

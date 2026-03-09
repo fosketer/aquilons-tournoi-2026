@@ -2,6 +2,8 @@
 // <app-header> web component — header, nav, and tournament selector
 // Usage: <app-header page="resultats"></app-header>
 
+import { escapeHTML } from '../lib/ui.js';
+
 class AppHeader extends HTMLElement {
 
     connectedCallback() {
@@ -28,7 +30,7 @@ class AppHeader extends HTMLElement {
         container.innerHTML = tournois.map(function (t) {
             var cls = t.slug === actif ? 'tournoi-btn active' : 'tournoi-btn';
             return '<button class="' + cls + '" data-tournoi="' + t.slug + '">' +
-                _escapeHTML(t.nom) + '</button>';
+                escapeHTML(t.nom) + '</button>';
         }).join('');
 
         // Attach click handlers
@@ -136,12 +138,6 @@ class AppHeader extends HTMLElement {
             link.style.display = (actif === 'cvs') ? '' : 'none';
         }
     }
-}
-
-function _escapeHTML(str) {
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
 }
 
 customElements.define('app-header', AppHeader);

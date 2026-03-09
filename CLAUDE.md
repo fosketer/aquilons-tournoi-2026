@@ -4,13 +4,35 @@ Application web de suivi en temps réel des scores de volleyball pour l'équipe 
 
 ## Architecture
 
-Site statique (HTML/CSS/JS) hébergé sur GitHub Pages, connecté à Supabase pour la persistance et le realtime.
+Site statique (ES6 modules) hébergé sur GitHub Pages, connecté à Supabase pour la persistance et le realtime. Zéro build step — push = deploy.
 
-- **index.html** — Page résultats : scores en direct (Supabase Realtime), bilan V/D/Sets, scorekeeper intégré via `?score`, adresses et liens Maps
-- **classement.html** — Classement des poules du tournoi (fetch Google Sheets CSV)
-- **stats.html** — Stats de saison RSEQ : tableau des adversaires (Supabase) + classements régionaux live (API RSEQ S1) + QCA hardcodé
-- **match.html** — Scorekeeper standalone (fallback, non lié dans la nav)
-- **supabase-setup.sql** — Schéma SQL de référence (déjà appliqué)
+### Pages (coquilles HTML ~16 lignes chacune)
+
+- **index.html** → `js/pages/resultats.js` — Scores en direct (Realtime), bilan V/D/Sets, scorekeeper intégré via `?score`, bracket scanner
+- **classement.html** → `js/pages/classement.js` — Classement des poules (Google Sheets CSV config-driven)
+- **stats.html** → `js/pages/stats.js` — Stats RSEQ : adversaires (Supabase) + classements régionaux (API RSEQ S1 + QCA Sheets)
+- **match.html** → `js/pages/scorekeeper.js` — Scorekeeper standalone avec liste de matchs dynamique
+
+### Modules partagés
+
+- `js/lib/supabase.js` — Client singleton + helpers (fetchRows, subscribe)
+- `js/lib/sheets.js` — Fetch + parse Google Sheets CSV
+- `js/lib/rseq.js` — Fetch API RSEQ S1 + transformation des données
+- `js/lib/ui.js` — Helpers UI (loading, error, empty states, escapeHTML)
+- `js/config.js` — Config tournoi depuis Supabase (getTournoiConfig, getTournoiActif)
+
+### Composants web
+
+- `js/components/app-header.js` — `<app-header>` : logo, nav, sélecteur de tournoi
+- `js/components/match-card.js` — `<match-card>` : carte de match réutilisable
+
+### CSS
+
+- `css/shared.css` — Variables, reset, header, nav, tournoi-selector, footer, utilitaires
+- `css/resultats.css` — Match cards, bilan, scoreboard, scorekeeper panel
+- `css/classement.css` — Pool cards, tables, cross-ranking, projection
+- `css/stats.css` — Region tabs, stat tables, rank summary
+- `css/scorekeeper.css` — Scorekeeper standalone
 
 ## Supabase
 
@@ -21,6 +43,8 @@ Site statique (HTML/CSS/JS) hébergé sur GitHub Pages, connecté à Supabase po
 - **Tournoi CVS ID :** `a0000000-0000-0000-0000-000000000001`
 - **Tournoi QCA ID :** `a0000000-0000-0000-0000-000000000002`
 - **Sélecteur :** toggle UI sous la nav, persisté localStorage + query param `?tournoi=`
+- **Config :** table `tournois` enrichie avec colonnes `slug TEXT` et `config JSONB` (sheets, pools, RSEQ leagues, team mappings)
+- **Migration :** `migrations/001-add-tournoi-config.sql`
 
 ### Table `matchs`
 Colonnes clés : `numero`, `heure`, `adversaire`, `terrain`, `lieu_nom`, `lieu_adresse`, `lieu_maps_url`, `aq_set1`, `adv_set1`, `aq_set2`, `adv_set2`, `aq_score_courant`, `adv_score_courant`, `set_courant`, `statut`, `set1_debut`, `set1_fin`, `set2_debut`, `set2_fin`, `match_externe`
@@ -84,6 +108,8 @@ Colonnes clés : `nom_tournoi`, `nom_officiel`, `ecole`, `region_rseq`, `divisio
 ## Conventions
 
 - Langue du code/UI : français
-- Pas de framework JS, vanilla seulement
-- La clé anon Supabase est dans le HTML (publique par design, protégée par RLS)
-- Navigation : 3 pages (Résultats, Classement, Stats)
+- Vanilla JS avec ES6 modules natifs (`<script type="module">`)
+- Web Components natifs (Custom Elements, sans Shadow DOM)
+- La clé anon Supabase est dans `js/lib/supabase.js` (publique par design, protégée par RLS)
+- Config tournoi dans Supabase JSONB — ajouter un tournoi = ajouter des rows dans la DB
+- Navigation : 3 pages (Résultats, Classement, Stats) + scorekeeper standalone

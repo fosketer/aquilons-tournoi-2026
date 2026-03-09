@@ -1,7 +1,7 @@
 // js/pages/scorekeeper.js
 import { getTournoiActif, getTournoiConfig } from '../config.js';
 import { getClient, fetchRows } from '../lib/supabase.js';
-import { showLoading, showError } from '../lib/ui.js';
+import { showLoading, showError, escapeHTML } from '../lib/ui.js';
 import '../components/app-header.js';
 
 const app = document.getElementById('app');
@@ -531,11 +531,6 @@ async function init() {
 // HELPERS
 // ==========================================
 
-function escapeHTML(str) {
-    var div = document.createElement('div');
-    div.textContent = str || '';
-    return div.innerHTML;
-}
 
 function escapeAttr(str) {
     return (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
