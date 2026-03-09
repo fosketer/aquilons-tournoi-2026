@@ -18,11 +18,6 @@ class AppHeader extends HTMLElement {
      * @param {function(string):void} onSwitch - callback when user clicks a different tournament
      */
     renderSelector(tournois, actif, onSwitch) {
-        const page = this.getAttribute('page') || 'resultats';
-
-        // Scorekeeper never shows a selector
-        if (page === 'scorekeeper') return;
-
         const container = this.querySelector('.tournoi-selector');
         if (!container) return;
 
@@ -64,9 +59,6 @@ class AppHeader extends HTMLElement {
     // ——— Private helpers ———
 
     _buildHTML(page) {
-        if (page === 'scorekeeper') {
-            return this._buildScorekeeperHeader();
-        }
         return this._buildFullHeader(page);
     }
 
@@ -96,22 +88,6 @@ class AppHeader extends HTMLElement {
             '<div class="tournament-info">' +
                 '<div class="tourney-name"></div>' +
                 '<div class="tourney-detail"></div>' +
-            '</div>';
-    }
-
-    _buildScorekeeperHeader() {
-        return '' +
-            '<div class="header" style="padding:1rem;">' +
-                '<img src="logo.jpg" alt="Aquilons" class="header-logo" ' +
-                    'style="width:50px;vertical-align:middle;margin-right:0.5rem">' +
-                '<span class="header-title" style="font-family:\'Oswald\',sans-serif;' +
-                    'font-size:1.2rem;font-weight:700;text-transform:uppercase;' +
-                    'letter-spacing:0.1em;color:var(--silver-light);display:inline;' +
-                    'vertical-align:middle">Match en cours</span>' +
-            '</div>' +
-            '<div class="nav">' +
-                '<a href="index.html">R\u00e9sultats</a>' +
-                '<a href="match.html" class="active">Match</a>' +
             '</div>';
     }
 
