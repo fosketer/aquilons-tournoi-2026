@@ -1,8 +1,6 @@
 // js/pages/stats.js
 import { getTournoiActif, getTournoiConfig, setTournoiActif, listTournois } from '../config.js';
 import { fetchRows } from '../lib/supabase.js';
-import { fetchLeague, buildRegion } from '../lib/rseq.js';
-import { fetchCSV, parseCSV } from '../lib/sheets.js';
 import { showLoading, showError } from '../lib/ui.js';
 import '../components/app-header.js';
 
@@ -10,247 +8,315 @@ const app = document.getElementById('app');
 let cleanup = null;
 
 // ==========================================
-// HELPERS
+// COMPUTE STATS
 // ==========================================
 
-function isHighlighted(teamName, highlights) {
-    var name = teamName.toLowerCase();
-    for (var i = 0; i < highlights.length; i++) {
-        if (name.indexOf(highlights[i].toLowerCase()) !== -1) return true;
-    }
-    return false;
-}
+function computeStats(matchs) {
+    var wins = 0, losses = 0, draws = 0;
+    var setsWon = 0, setsLost = 0, setsPlayed = 0;
+    var pointsFor = 0, pointsAgainst = 0;
+    var completed = [];
 
-// ==========================================
-// TOURNAMENT TEAMS TABLE
-// ==========================================
+    matchs.forEach(function(m) {
+        if (m.statut === 'win') wins++;
+        else if (m.statut === 'loss') losses++;
+        else if (m.statut === 'draw') draws++;
 
-function renderTourneyTeams(data, tourneyBody) {
-    var i = 0;
-    tourneyBody.innerHTML = data.filter(function(a) { return a.nom_tournoi !== 'Aquilons'; }).map(function(a) {
-        i++;
-        var isAq = false;
-        var rankCls = a.rang_regional === 1 ? 'rank-1' : '';
-        var rankTxt = a.rang_regional ? a.rang_regional + (a.rang_regional === 1 ? 'er' : 'e') : '<span class="stat-na">-</span>';
-        var sg = a.sets_gagnes != null ? a.sets_gagnes : '<span class="stat-na">-</span>';
-        var sp = a.sets_perdus != null ? a.sets_perdus : '<span class="stat-na">-</span>';
-        var pp = a.points_pour != null ? a.points_pour : '<span class="stat-na">-</span>';
-        var pc = a.points_contre != null ? a.points_contre : '<span class="stat-na">-</span>';
-        var school = a.nom_officiel || a.ecole || '';
-        return '<tr' + (isAq ? ' class="is-aquilon"' : '') + '>' +
-            '<td class="num">' + i + '</td>' +
-            '<td><span class="team-cell-name">' + a.nom_tournoi + '</span>' +
-                (school ? '<span class="team-cell-school">' + school + '</span>' : '') +
-            '</td>' +
-            '<td class="team-cell-region">' + (a.region_rseq || '<span class="stat-na">-</span>') + '</td>' +
-            '<td class="stat ' + rankCls + '">' + rankTxt + '</td>' +
-            '<td class="stat">' + sg + '</td>' +
-            '<td class="stat">' + sp + '</td>' +
-            '<td class="stat">' + pp + '</td>' +
-            '<td class="stat">' + pc + '</td>' +
-            '</tr>';
-    }).join('');
-}
+        if (m.statut !== 'win' && m.statut !== 'loss' && m.statut !== 'draw') return;
 
-// ==========================================
-// QCA STANDINGS (Google Sheets CSV)
-// ==========================================
+        var matchSets = [];
+        var setData = [
+            { aq: m.aq_set1, adv: m.adv_set1 },
+            { aq: m.aq_set2, adv: m.adv_set2 },
+            { aq: m.aq_set3, adv: m.adv_set3 }
+        ];
+        var mPtsFor = 0, mPtsAgainst = 0, mSetsW = 0, mSetsL = 0;
 
-function fetchQCAStandings(qcaConfig) {
-    var url = qcaConfig.sheets_url;
-    var cols = qcaConfig.columns;
-    return fetchCSV(url)
-        .then(function(csv) {
-            var lines = parseCSV(csv);
-            var region = {
-                id: 'qca',
-                name: 'QCA (Qu\u00e9bec-Chaudi\u00e8re-Appalaches)',
-                info: 'Benjamin F\u00e9minin \u2014 Classement g\u00e9n\u00e9ral',
-                cols: ['Rang', '\u00c9quipe', 'T3', 'T4', 'T5', 'Total'],
-                teams: []
-            };
-            // Data starts at line index from config (default 6)
-            var startLine = (cols && cols.start_line != null) ? cols.start_line : 6;
-            var colRang = (cols && cols.rang != null) ? cols.rang : 0;
-            var colEquipe = (cols && cols.equipe != null) ? cols.equipe : 1;
-            var colT3 = (cols && cols.t3 != null) ? cols.t3 : 4;
-            var colT4 = (cols && cols.t4 != null) ? cols.t4 : 7;
-            var colT5 = (cols && cols.t5 != null) ? cols.t5 : 10;
-            var colTotal = (cols && cols.total != null) ? cols.total : 11;
-
-            for (var i = startLine; i < lines.length; i++) {
-                var c = lines[i];
-                var rang = (c[colRang] || '').trim();
-                var equipe = (c[colEquipe] || '').trim();
-                if (!rang || !equipe) continue;
-                var t3 = (c[colT3] || '').trim() || '-';
-                var t4 = (c[colT4] || '').trim() || '-';
-                var t5 = (c[colT5] || '').trim() || '-';
-                var total = (c[colTotal] || '').trim() || '-';
-                region.teams.push([rang, equipe, t3, t4, t5, total]);
-            }
-            region.source = { name: 'RSEQ-QCA', url: 'https://rseqqca.com/volleyball/secondaire/horaire' };
-            return region;
+        setData.forEach(function(s) {
+            if (s.aq == null || s.adv == null) return;
+            setsPlayed++;
+            pointsFor += s.aq;
+            pointsAgainst += s.adv;
+            mPtsFor += s.aq;
+            mPtsAgainst += s.adv;
+            if (s.aq > s.adv) { setsWon++; mSetsW++; }
+            else { setsLost++; mSetsL++; }
+            matchSets.push(s);
         });
-}
 
-// ==========================================
-// REGIONAL STANDINGS (RSEQ API)
-// ==========================================
-
-function renderRegions(regions, highlights) {
-    var tabsEl = document.getElementById('regionTabs');
-    var sectionsEl = document.getElementById('regionSections');
-    var tabsHtml = '';
-    var sectHtml = '';
-
-    regions.forEach(function(r, idx) {
-        tabsHtml += '<div class="region-tab' + (idx === 0 ? ' active' : '') + '" data-region="' + r.id + '">' + r.name + '</div>';
-
-        sectHtml += '<div class="region-section' + (idx === 0 ? ' show' : '') + '" id="region-' + r.id + '">';
-        sectHtml += '<div class="region-card">';
-        sectHtml += '<div class="region-header"><span class="region-name">' + r.name + '</span><span class="region-info">' + r.info + '</span></div>';
-
-        if (r.teams.length === 0) {
-            sectHtml += '<div class="no-data">Aucune donn\u00e9e disponible</div>';
-        } else {
-            sectHtml += '<table class="region-table"><thead><tr>';
-            r.cols.forEach(function(c) { sectHtml += '<th>' + c + '</th>'; });
-            sectHtml += '</tr></thead><tbody>';
-
-            r.teams.forEach(function(t) {
-                var isHl = isHighlighted(t[1], highlights);
-                sectHtml += '<tr' + (isHl ? ' class="highlight"' : '') + '>';
-                t.forEach(function(val) {
-                    if (val === null) val = '-';
-                    sectHtml += '<td>' + val + '</td>';
-                });
-                sectHtml += '</tr>';
-            });
-            sectHtml += '</tbody></table>';
-        }
-
-        sectHtml += '</div>';
-        if (r.source) {
-            sectHtml += '<div class="region-source">Source\u00a0: <a href="' + r.source.url + '" target="_blank">' + r.source.name + '</a></div>';
-        }
-        sectHtml += '</div>';
-    });
-
-    tabsEl.innerHTML = tabsHtml;
-    sectionsEl.innerHTML = sectHtml;
-
-    // Wire up tab clicks
-    tabsEl.querySelectorAll('.region-tab').forEach(function(tab) {
-        tab.addEventListener('click', function() {
-            showRegion(tab.dataset.region, regions);
+        completed.push({
+            match: m,
+            sets: matchSets,
+            setsWon: mSetsW,
+            setsLost: mSetsL,
+            pointsFor: mPtsFor,
+            pointsAgainst: mPtsAgainst,
+            pointDiff: mPtsFor - mPtsAgainst
         });
     });
-}
 
-function showRegion(id, regions) {
-    document.querySelectorAll('.region-section').forEach(function(el) { el.classList.remove('show'); });
-    document.querySelectorAll('.region-tab').forEach(function(el) { el.classList.remove('active'); });
-    document.getElementById('region-' + id).classList.add('show');
-    var tabs = document.querySelectorAll('.region-tab');
-    for (var i = 0; i < tabs.length; i++) {
-        var r = regions[i];
-        if (r && r.id === id) tabs[i].classList.add('active');
-    }
-}
-
-// ==========================================
-// RANK SUMMARY
-// ==========================================
-
-function buildRankSummary(regions, teamMap) {
-    var body = document.getElementById('rankBody');
-    var rows = '';
-    teamMap.forEach(function(tm) {
-        var found = null;
-        var total = 0;
-        var regionName = '';
-        for (var ri = 0; ri < regions.length; ri++) {
-            var r = regions[ri];
-            if (r.id !== tm.regionId) continue;
-            regionName = r.name;
-            total = r.teams.length;
-            for (var ti = 0; ti < r.teams.length; ti++) {
-                var team = r.teams[ti];
-                if (team[1].toLowerCase().indexOf(tm.search.toLowerCase()) !== -1) {
-                    found = { rang: team[0], name: team[1] };
-                    break;
-                }
-            }
-            break;
-        }
-        var isAq = tm.tournoi === 'Aquilons';
-        rows += '<tr' + (isAq ? ' class="is-aquilon"' : '') + '>';
-        rows += '<td><span class="team-cell-name">' + tm.tournoi + '</span></td>';
-        rows += '<td style="font-size:0.65rem;color:var(--gray)">' + (found ? found.name : '-') + '</td>';
-        rows += '<td class="team-cell-region">' + (regionName || '-') + '</td>';
-        rows += '<td class="stat team-cell-rank">' + (found ? found.rang : '-') + '</td>';
-        rows += '<td class="stat" style="color:var(--gray)">' + (total || '-') + '</td>';
-        rows += '</tr>';
-    });
-    body.innerHTML = rows || '<tr><td colspan="5" class="no-data">Aucune donn\u00e9e</td></tr>';
+    return {
+        wins: wins, losses: losses, draws: draws,
+        setsWon: setsWon, setsLost: setsLost, setsPlayed: setsPlayed,
+        pointsFor: pointsFor, pointsAgainst: pointsAgainst,
+        pointDiff: pointsFor - pointsAgainst,
+        avgPtsFor: setsPlayed ? (pointsFor / setsPlayed).toFixed(1) : '0',
+        avgPtsAgainst: setsPlayed ? (pointsAgainst / setsPlayed).toFixed(1) : '0',
+        completed: completed,
+        totalMatchs: matchs.length,
+        playedMatchs: completed.length
+    };
 }
 
 // ==========================================
 // PAGE STRUCTURE
 // ==========================================
 
-function buildPageHTML(sectionTitle) {
+function buildPageHTML(tournoiNom) {
     return '<div class="content">' +
-        '<div class="section-title">' +
-            sectionTitle +
-            ' <span class="section-sub">Saison RSEQ 2025-2026</span>' +
+        '<div class="section-title">Performance' +
+            ' <span class="section-sub">' + tournoiNom + '</span>' +
         '</div>' +
-        '<div style="overflow-x:auto;">' +
-        '<table class="tourney-table" id="tourneyTable">' +
-            '<thead>' +
-                '<tr>' +
-                    '<th class="num">#</th>' +
-                    '<th>\u00c9quipe</th>' +
-                    '<th>R\u00e9gion</th>' +
-                    '<th class="stat">Rang</th>' +
-                    '<th class="stat">SG</th>' +
-                    '<th class="stat">SP</th>' +
-                    '<th class="stat">PP</th>' +
-                    '<th class="stat">PC</th>' +
-                '</tr>' +
-            '</thead>' +
-            '<tbody id="tourneyBody"></tbody>' +
-        '</table>' +
-        '</div>' +
-        '<div class="section-title" style="margin-top:2rem;">' +
-            'Rang r\u00e9gional' +
-            ' <span class="section-sub">Classement des \u00e9quipes du tournoi dans leur r\u00e9gion</span>' +
-        '</div>' +
-        '<div style="overflow-x:auto;">' +
-        '<table class="tourney-table" id="rankTable">' +
-            '<thead>' +
-                '<tr>' +
-                    '<th>\u00c9quipe tournoi</th>' +
-                    '<th>\u00c9quipe RSEQ</th>' +
-                    '<th>R\u00e9gion</th>' +
-                    '<th class="stat">Rang</th>' +
-                    '<th class="stat">/ Total</th>' +
-                '</tr>' +
-            '</thead>' +
-            '<tbody id="rankBody">' +
-                '<tr><td colspan="5" class="no-data">Chargement...</td></tr>' +
-            '</tbody>' +
-        '</table>' +
-        '</div>' +
-        '<div class="section-title" style="margin-top:2rem;">' +
-            'Classements r\u00e9gionaux complets' +
-            ' <span class="section-sub">Toutes les \u00e9quipes par r\u00e9gion</span>' +
-        '</div>' +
-        '<div class="region-tabs" id="regionTabs"></div>' +
-        '<div id="regionSections"></div>' +
+        '<div id="perfSection"></div>' +
+
+        '<div class="section-title" style="margin-top:2rem;">Match par match</div>' +
+        '<div id="matchResults"></div>' +
+
+        '<div class="section-title" style="margin-top:2rem;">Nos adversaires</div>' +
+        '<div id="adversaires"></div>' +
+
         '<div class="footer">Aquilons \u00b7 Jean de Br\u00e9beuf</div>' +
     '</div>';
+}
+
+// ==========================================
+// RENDER: PERFORMANCE
+// ==========================================
+
+function renderPerformance(stats) {
+    var el = document.getElementById('perfSection');
+
+    if (stats.playedMatchs === 0) {
+        el.innerHTML = '<div class="st-empty">Aucun match jou\u00e9 pour le moment</div>';
+        return;
+    }
+
+    var total = stats.wins + stats.losses + stats.draws;
+    var winPct = total > 0 ? Math.round((stats.wins / total) * 100) : 0;
+    var setsTotal = stats.setsWon + stats.setsLost;
+    var setsPct = setsTotal > 0 ? Math.round((stats.setsWon / setsTotal) * 100) : 0;
+    var diffSign = stats.pointDiff >= 0 ? '+' : '';
+    var diffCls = stats.pointDiff >= 0 ? 'positive' : 'negative';
+
+    var h = '<div class="perf-card">';
+
+    // Big record
+    h += '<div class="perf-record">';
+    h += '<div class="perf-record-item win"><span class="perf-big">' + stats.wins + '</span><span class="perf-lbl">V</span></div>';
+    if (stats.draws > 0) {
+        h += '<div class="perf-sep">\u2013</div>';
+        h += '<div class="perf-record-item draw"><span class="perf-big">' + stats.draws + '</span><span class="perf-lbl">N</span></div>';
+    }
+    h += '<div class="perf-sep">\u2013</div>';
+    h += '<div class="perf-record-item loss"><span class="perf-big">' + stats.losses + '</span><span class="perf-lbl">D</span></div>';
+    h += '</div>';
+
+    // Win % bar
+    h += '<div class="perf-bar-row">';
+    h += '<div class="perf-bar-header"><span>Matchs gagn\u00e9s</span><span>' + winPct + '%</span></div>';
+    h += '<div class="perf-bar"><div class="perf-bar-fill win" style="width:' + winPct + '%"></div></div>';
+    h += '</div>';
+
+    // Sets bar
+    h += '<div class="perf-bar-row">';
+    h += '<div class="perf-bar-header"><span>Sets ' + stats.setsWon + 'G \u2013 ' + stats.setsLost + 'P</span><span>' + setsPct + '%</span></div>';
+    h += '<div class="perf-bar"><div class="perf-bar-fill sets" style="width:' + setsPct + '%"></div></div>';
+    h += '</div>';
+
+    // Points row
+    h += '<div class="perf-pts">';
+    h += '<div class="perf-pt"><span class="perf-pt-num">' + stats.pointsFor + '</span><span class="perf-pt-lbl">Pts marqu\u00e9s</span></div>';
+    h += '<div class="perf-pt"><span class="perf-pt-num">' + stats.pointsAgainst + '</span><span class="perf-pt-lbl">Pts conc\u00e9d\u00e9s</span></div>';
+    h += '<div class="perf-pt"><span class="perf-pt-num ' + diffCls + '">' + diffSign + stats.pointDiff + '</span><span class="perf-pt-lbl">Diff\u00e9rentiel</span></div>';
+    h += '</div>';
+
+    // Averages
+    h += '<div class="perf-avg">';
+    h += '<span>\u00d8 ' + stats.avgPtsFor + ' pts/set marqu\u00e9s</span>';
+    h += '<span>\u00d8 ' + stats.avgPtsAgainst + ' pts/set conc\u00e9d\u00e9s</span>';
+    h += '</div>';
+
+    h += '</div>';
+    el.innerHTML = h;
+}
+
+// ==========================================
+// RENDER: MATCH RESULTS
+// ==========================================
+
+function renderMatchResults(stats, advMap) {
+    var el = document.getElementById('matchResults');
+
+    if (stats.completed.length === 0) {
+        el.innerHTML = '<div class="st-empty">Aucun r\u00e9sultat disponible</div>';
+        return;
+    }
+
+    var html = '';
+    stats.completed.forEach(function(c) {
+        var m = c.match;
+        var adv = advMap[m.adversaire] || {};
+        var isWin = m.statut === 'win';
+        var isDraw = m.statut === 'draw';
+        var cls = isWin ? 'win' : (isDraw ? 'draw' : 'loss');
+        var txt = isWin ? 'Victoire' : (isDraw ? '\u00c9galit\u00e9' : 'D\u00e9faite');
+
+        html += '<div class="mr-card ' + cls + '">';
+
+        // Header
+        html += '<div class="mr-head">';
+        html += '<span class="mr-status ' + cls + '">' + txt + '</span>';
+        html += '<span class="mr-time">Match ' + m.numero + ' \u00b7 ' + m.heure + '</span>';
+        html += '</div>';
+
+        // Opponent
+        html += '<div class="mr-opp">';
+        html += '<span class="mr-vs">vs</span>';
+        html += '<span class="mr-name">' + m.adversaire + '</span>';
+        if (adv.rang_regional || adv.region_rseq) {
+            html += '<span class="mr-rank">';
+            if (adv.rang_regional) html += adv.rang_regional + (adv.rang_regional === 1 ? 'er' : 'e');
+            if (adv.region_rseq) html += ' ' + adv.region_rseq;
+            html += '</span>';
+        }
+        html += '</div>';
+
+        // Set scores
+        html += '<div class="mr-sets">';
+        c.sets.forEach(function(s, i) {
+            var won = s.aq > s.adv;
+            html += '<div class="mr-set ' + (won ? 'won' : 'lost') + '">';
+            html += '<span class="mr-set-lbl">Set ' + (i + 1) + '</span>';
+            html += '<span class="mr-set-sc">' + s.aq + '\u2013' + s.adv + '</span>';
+            html += '</div>';
+        });
+        html += '</div>';
+
+        // Point diff bar
+        var maxDiff = 30;
+        var barPct = Math.min((Math.abs(c.pointDiff) / maxDiff) * 100, 100);
+        var sign = c.pointDiff >= 0 ? '+' : '';
+        html += '<div class="mr-diff">';
+        html += '<span class="mr-diff-num">' + sign + c.pointDiff + ' pts</span>';
+        html += '<div class="mr-diff-bar"><div class="mr-diff-fill ' + cls + '" style="width:' + barPct + '%"></div></div>';
+        html += '</div>';
+
+        html += '</div>';
+    });
+
+    el.innerHTML = html;
+}
+
+// ==========================================
+// RENDER: ADVERSAIRES
+// ==========================================
+
+function renderAdversaires(advMap, matchs) {
+    var el = document.getElementById('adversaires');
+
+    // Match result lookup
+    var results = {};
+    matchs.forEach(function(m) {
+        if (m.statut === 'win' || m.statut === 'loss' || m.statut === 'draw') {
+            results[m.adversaire] = m;
+        }
+    });
+
+    // Unique opponents from matchs
+    var opponents = [];
+    var seen = {};
+    matchs.forEach(function(m) {
+        if (!m.adversaire || seen[m.adversaire]) return;
+        seen[m.adversaire] = true;
+        opponents.push(m.adversaire);
+    });
+
+    if (opponents.length === 0) {
+        el.innerHTML = '<div class="st-empty">Aucun adversaire</div>';
+        return;
+    }
+
+    // Sort: played first, then by regional rank
+    opponents.sort(function(a, b) {
+        var ap = results[a] ? 1 : 0;
+        var bp = results[b] ? 1 : 0;
+        if (ap !== bp) return bp - ap;
+        var ar = (advMap[a] || {}).rang_regional || 999;
+        var br = (advMap[b] || {}).rang_regional || 999;
+        return ar - br;
+    });
+
+    var html = '';
+    opponents.forEach(function(name) {
+        var adv = advMap[name] || {};
+        var m = results[name];
+
+        html += '<div class="adv-card">';
+
+        // Name + rank badge
+        html += '<div class="adv-top">';
+        html += '<div class="adv-info">';
+        html += '<span class="adv-name">' + name + '</span>';
+        if (adv.nom_officiel || adv.ecole) {
+            html += '<span class="adv-school">' + (adv.nom_officiel || adv.ecole) + '</span>';
+        }
+        html += '</div>';
+        if (adv.rang_regional) {
+            var topCls = adv.rang_regional <= 2 ? ' top' : '';
+            html += '<div class="adv-badge' + topCls + '">' + adv.rang_regional + (adv.rang_regional === 1 ? 'er' : 'e') + '</div>';
+        }
+        html += '</div>';
+
+        // Region
+        if (adv.region_rseq) {
+            html += '<div class="adv-region">' + adv.region_rseq + '</div>';
+        }
+
+        // RSEQ season stats bar
+        if (adv.sets_gagnes != null) {
+            var totalS = (adv.sets_gagnes || 0) + (adv.sets_perdus || 0);
+            var rate = totalS > 0 ? Math.round((adv.sets_gagnes / totalS) * 100) : 0;
+            html += '<div class="adv-rseq">';
+            html += '<span class="adv-rseq-txt">Saison RSEQ\u00a0: ' + adv.sets_gagnes + 'G\u2013' + adv.sets_perdus + 'P';
+            if (adv.matchs_joues) html += ' (' + adv.matchs_joues + ' matchs)';
+            html += '</span>';
+            html += '<div class="adv-rseq-bar"><div class="adv-rseq-fill" style="width:' + rate + '%"></div></div>';
+            html += '</div>';
+        }
+
+        // Our result
+        if (m) {
+            var isWin = m.statut === 'win';
+            var isDraw = m.statut === 'draw';
+            var rc = isWin ? 'win' : (isDraw ? 'draw' : 'loss');
+            var rt = isWin ? 'Victoire' : (isDraw ? '\u00c9galit\u00e9' : 'D\u00e9faite');
+            var sc = [];
+            if (m.aq_set1 != null) sc.push(m.aq_set1 + '\u2013' + m.adv_set1);
+            if (m.aq_set2 != null) sc.push(m.aq_set2 + '\u2013' + m.adv_set2);
+            if (m.aq_set3 != null) sc.push(m.aq_set3 + '\u2013' + m.adv_set3);
+
+            html += '<div class="adv-result ' + rc + '">';
+            html += '<span class="adv-res-tag">' + rt + '</span>';
+            html += '<span class="adv-res-sc">' + sc.join(' / ') + '</span>';
+            html += '</div>';
+        } else {
+            html += '<div class="adv-result upcoming"><span class="adv-res-tag">\u00c0 venir</span></div>';
+        }
+
+        html += '</div>';
+    });
+
+    el.innerHTML = html;
 }
 
 // ==========================================
@@ -263,86 +329,25 @@ async function init(slug) {
 
     try {
         var config = await getTournoiConfig(slug);
-        var rseqCfg = (config.config && config.config.rseq) || {};
-        var qcaCfg = (config.config && config.config.qca) || null;
-        var teamMap = (config.config && config.config.team_map) || [];
-        var highlights = rseqCfg.highlights || [];
-        var leagues = rseqCfg.leagues || [];
 
-        // Generate section title from config.nom
-        var sectionTitle = '\u00c9quipes du ' + config.nom;
-
-        // Build page structure
-        app.innerHTML = buildPageHTML(sectionTitle);
-
-        var regions = [];
-
-        // Source de vérité = matchs (contre qui on joue)
-        // Enrichissement = adversaires (région, rang, stats RSEQ)
-        var results = await Promise.all([
-            fetchRows('adversaires', { tournoi_id: config.id }),
-            fetchRows('matchs', { tournoi_id: config.id }, { select: 'adversaire' })
+        var data = await Promise.all([
+            fetchRows('matchs', { tournoi_id: config.id }, { order: 'numero' }),
+            fetchRows('adversaires', { tournoi_id: config.id })
         ]);
-        var advLookup = {};
-        (results[0] || []).forEach(function(a) { advLookup[a.nom_tournoi] = a; });
 
-        // Extraire les adversaires distincts depuis matchs
-        var seen = {};
-        var teamsData = [];
-        (results[1] || []).forEach(function(m) {
-            var name = m.adversaire;
-            if (!name || seen[name]) return;
-            seen[name] = true;
-            var enriched = advLookup[name] || {};
-            teamsData.push({
-                nom_tournoi: name,
-                nom_officiel: enriched.nom_officiel || null,
-                ecole: enriched.ecole || null,
-                region_rseq: enriched.region_rseq || null,
-                rang_regional: enriched.rang_regional || null,
-                matchs_joues: enriched.matchs_joues || null,
-                sets_gagnes: enriched.sets_gagnes || null,
-                sets_perdus: enriched.sets_perdus || null,
-                points_pour: enriched.points_pour || null,
-                points_contre: enriched.points_contre || null
-            });
-        });
-        teamsData.sort(function(a, b) { return a.nom_tournoi.localeCompare(b.nom_tournoi); });
+        var matchs = data[0] || [];
+        var advList = data[1] || [];
+        var advMap = {};
+        advList.forEach(function(a) { advMap[a.nom_tournoi] = a; });
 
-        renderTourneyTeams(teamsData, document.getElementById('tourneyBody'));
+        app.innerHTML = buildPageHTML(config.nom);
 
-        // Fetch QCA from Google Sheets + RSEQ leagues in parallel
-        var qcaPromise = qcaCfg
-            ? fetchQCAStandings(qcaCfg).catch(function() { return null; })
-            : Promise.resolve(null);
+        var stats = computeStats(matchs);
+        renderPerformance(stats);
+        renderMatchResults(stats, advMap);
+        renderAdversaires(advMap, matchs);
 
-        var rseqPromises = leagues.map(function(cfg) {
-            return fetchLeague(cfg.leagueId).then(function(data) {
-                return { cfg: cfg, data: data };
-            }).catch(function() { return null; });
-        });
-
-        var allResults = await Promise.all([qcaPromise].concat(rseqPromises));
-
-        // QCA first
-        if (allResults[0] && allResults[0].teams.length > 0) {
-            regions.push(allResults[0]);
-        }
-
-        // RSEQ leagues
-        for (var i = 1; i < allResults.length; i++) {
-            if (allResults[i]) {
-                var region = buildRegion(allResults[i].cfg, allResults[i].data);
-                if (region.teams.length > 0) {
-                    regions.push(region);
-                }
-            }
-        }
-
-        renderRegions(regions, highlights);
-        buildRankSummary(regions, teamMap);
-
-        cleanup = function() { regions = []; };
+        cleanup = function() {};
     } catch (e) {
         showError(app, 'Impossible de charger les donn\u00e9es', function() { init(slug); });
     }

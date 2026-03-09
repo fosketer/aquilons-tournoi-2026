@@ -1,6 +1,15 @@
 /* ============================================
-   STATS PAGE — page-specific styles
+   STATS PAGE — Refonte performance
    ============================================ */
+
+/* Empty state */
+.st-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray);
+    font-style: italic;
+    font-size: 0.8rem;
+}
 
 /* Section subtitle */
 .section-sub {
@@ -12,166 +21,372 @@
 }
 
 /* ============================================
-   TOURNAMENT TEAMS TABLE
+   PERFORMANCE CARD
    ============================================ */
-.tourney-table {
-    width: 100%;
-    border-collapse: collapse;
+.perf-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(26,86,184,0.15);
+    border-radius: 12px;
+    padding: 1.2rem;
+}
+
+/* Record: big V-D numbers */
+.perf-record {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: 1.2rem;
+}
+
+.perf-record-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 3.5rem;
+}
+
+.perf-big {
+    font-family: 'Oswald', sans-serif;
+    font-size: 2.8rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.perf-record-item.win .perf-big { color: var(--win); }
+.perf-record-item.loss .perf-big { color: var(--loss); }
+.perf-record-item.draw .perf-big { color: #FFC107; }
+
+.perf-lbl {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--gray);
+    margin-top: 0.2rem;
+}
+
+.perf-sep {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.5rem;
+    color: var(--silver-dark);
+    margin: 0 0.4rem;
+    padding-bottom: 1.2rem;
+}
+
+/* Progress bars */
+.perf-bar-row {
+    margin-bottom: 0.8rem;
+}
+
+.perf-bar-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: var(--gray);
+    margin-bottom: 0.3rem;
+}
+
+.perf-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.perf-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+}
+
+.perf-bar-fill.win { background: var(--win); }
+.perf-bar-fill.sets { background: var(--blue-light); }
+
+/* Points trio */
+.perf-pts {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(26,86,184,0.1);
+}
+
+.perf-pt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.perf-pt-num {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--silver-light);
+}
+
+.perf-pt-num.positive { color: var(--win); }
+.perf-pt-num.negative { color: var(--loss); }
+
+.perf-pt-lbl {
+    font-size: 0.6rem;
+    color: var(--gray);
+    margin-top: 0.15rem;
+}
+
+/* Averages */
+.perf-avg {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 0.8rem;
+    font-size: 0.65rem;
+    color: var(--silver-dark);
+}
+
+/* ============================================
+   MATCH RESULT CARDS
+   ============================================ */
+.mr-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(26,86,184,0.12);
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.6rem;
+    border-left: 3px solid var(--gray);
+}
+
+.mr-card.win { border-left-color: var(--win); }
+.mr-card.loss { border-left-color: var(--loss); }
+.mr-card.draw { border-left-color: #FFC107; }
+
+/* Header */
+.mr-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.4rem;
+}
+
+.mr-status {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+}
+
+.mr-status.win { color: var(--win); }
+.mr-status.loss { color: var(--loss); }
+.mr-status.draw { color: #FFC107; }
+
+.mr-time {
+    font-size: 0.65rem;
+    color: var(--silver-dark);
+}
+
+/* Opponent line */
+.mr-opp {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.6rem;
+}
+
+.mr-vs {
+    font-size: 0.6rem;
+    color: var(--silver-dark);
+    text-transform: uppercase;
+}
+
+.mr-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.mr-rank {
+    font-size: 0.6rem;
+    color: var(--gray);
+    background: rgba(26,86,184,0.1);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+/* Set scores */
+.mr-sets {
+    display: flex;
+    gap: 0.5rem;
     margin-bottom: 0.5rem;
 }
 
-.tourney-table th {
+.mr-set {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.03);
+}
+
+.mr-set.won { background: rgba(76,175,80,0.1); }
+.mr-set.lost { background: rgba(229,57,53,0.08); }
+
+.mr-set-lbl {
+    font-size: 0.5rem;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.mr-set-sc {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.mr-set.won .mr-set-sc { color: var(--win); }
+.mr-set.lost .mr-set-sc { color: var(--loss); }
+
+/* Point diff bar */
+.mr-diff {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mr-diff-num {
+    font-size: 0.65rem;
+    color: var(--gray);
+    min-width: 3.5rem;
+}
+
+.mr-diff-bar {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.mr-diff-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+}
+
+.mr-diff-fill.win { background: var(--win); }
+.mr-diff-fill.loss { background: var(--loss); }
+.mr-diff-fill.draw { background: #FFC107; }
+
+/* ============================================
+   ADVERSAIRE CARDS
+   ============================================ */
+.adv-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(26,86,184,0.12);
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.6rem;
+}
+
+.adv-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.3rem;
+}
+
+.adv-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.adv-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.adv-card .adv-school {
+    font-size: 0.65rem;
+    color: var(--silver-dark);
+    font-style: italic;
+}
+
+/* Rank badge */
+.adv-badge {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.06);
+    color: var(--silver-light);
+    text-align: center;
+    min-width: 2.5rem;
+    white-space: nowrap;
+}
+
+.adv-badge.top {
+    background: rgba(255,215,0,0.12);
+    color: var(--gold);
+    border: 1px solid rgba(255,215,0,0.25);
+}
+
+.adv-region {
+    font-size: 0.65rem;
+    color: var(--gray);
+    margin-bottom: 0.4rem;
+}
+
+/* RSEQ season stats */
+.adv-rseq {
+    margin-bottom: 0.5rem;
+}
+
+.adv-rseq-txt {
+    font-size: 0.65rem;
+    color: var(--silver-dark);
+}
+
+.adv-rseq-bar {
+    height: 3px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 2px;
+    margin-top: 0.2rem;
+    overflow: hidden;
+}
+
+.adv-rseq-fill {
+    height: 100%;
+    background: var(--blue-light);
+    border-radius: 2px;
+}
+
+/* Result tag */
+.adv-result {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+.adv-res-tag {
     font-family: 'Oswald', sans-serif;
     font-size: 0.65rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--gray);
-    padding: 0.4rem 0.5rem;
-    text-align: left;
-    border-bottom: 1px solid rgba(26,86,184,0.15);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
 }
 
-.tourney-table th.num { text-align: center; width: 2rem; }
-.tourney-table th.stat { text-align: center; }
+.adv-result.win .adv-res-tag { background: rgba(76,175,80,0.15); color: var(--win); }
+.adv-result.loss .adv-res-tag { background: rgba(229,57,53,0.12); color: var(--loss); }
+.adv-result.draw .adv-res-tag { background: rgba(255,193,7,0.12); color: #FFC107; }
+.adv-result.upcoming .adv-res-tag { background: rgba(255,255,255,0.05); color: var(--gray); }
 
-.tourney-table td {
-    font-size: 0.75rem;
-    padding: 0.5rem;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    vertical-align: middle;
-}
-
-.tourney-table td.num { text-align: center; color: var(--gray); }
-.tourney-table td.stat { text-align: center; }
-
-.tourney-table tr.is-aquilon td { background: rgba(26,86,184,0.08); }
-.tourney-table tr.is-aquilon td:first-child { border-left: 3px solid var(--blue); }
-
-/* Team cell sub-elements */
-.team-cell-name { font-weight: 600; }
-.team-cell-school {
-    font-size: 0.6rem;
-    color: var(--silver-dark);
-    font-style: italic;
-    display: block;
-    margin-top: 0.1rem;
-}
-.team-cell-region { font-size: 0.6rem; color: var(--gray); }
-.team-cell-rank { font-weight: 600; color: var(--silver-light); }
-.rank-1 { color: var(--gold); }
-
-/* Stat cell variants */
-.stat-good { color: var(--win); font-weight: 600; }
-.stat-bad { color: var(--loss); font-weight: 600; }
-.stat-na { color: var(--silver-dark); font-size: 0.65rem; }
-
-/* ============================================
-   REGIONAL TABLES
-   ============================================ */
-.region-card {
-    background: var(--bg-card);
-    border: 1px solid rgba(26,86,184,0.15);
-    border-radius: 10px;
-    margin-bottom: 1rem;
-    overflow: hidden;
-}
-
-.region-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.6rem 1rem;
-    background: rgba(26,86,184,0.08);
-    border-bottom: 1px solid rgba(26,86,184,0.15);
-}
-
-.region-name {
-    font-family: 'Oswald', sans-serif;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--blue-light);
-}
-
-.region-info { font-size: 0.6rem; color: var(--gray); }
-
-.region-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.region-table th {
-    font-size: 0.55rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--gray);
-    padding: 0.3rem 0.4rem;
-    text-align: center;
-    border-bottom: 1px solid rgba(26,86,184,0.1);
-    font-family: 'Oswald', sans-serif;
-}
-
-.region-table th:first-child { text-align: center; width: 1.8rem; }
-.region-table th:nth-child(2) { text-align: left; }
-
-.region-table td {
+.adv-res-sc {
     font-size: 0.7rem;
-    padding: 0.35rem 0.4rem;
-    border-bottom: 1px solid rgba(255,255,255,0.03);
-    text-align: center;
-}
-
-.region-table td:nth-child(2) { text-align: left; font-weight: 500; }
-.region-table tr.highlight td { background: rgba(26,86,184,0.1); }
-.region-table tr.highlight td:first-child { border-left: 3px solid var(--blue); }
-
-/* No data placeholder */
-.no-data {
-    padding: 1rem;
-    text-align: center;
-    font-size: 0.75rem;
-    color: var(--gray);
-    font-style: italic;
-}
-
-/* ============================================
-   REGION TABS
-   ============================================ */
-.region-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    padding: 0.5rem 0;
-    margin-bottom: 0.5rem;
-}
-
-.region-tab {
-    font-family: 'Oswald', sans-serif;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 0.4rem 0.8rem;
-    border-radius: 6px;
-    border: 1px solid rgba(26,86,184,0.2);
-    background: var(--bg-card);
-    color: var(--gray);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.region-tab:hover { color: var(--white); border-color: rgba(26,86,184,0.4); }
-.region-tab.active { background: var(--blue); color: var(--white); border-color: var(--blue); }
-
-.region-section { display: none; }
-.region-section.show { display: block; }
-
-/* Region source link */
-.region-source {
-    font-size: 0.6rem;
     color: var(--silver-dark);
-    text-align: right;
-    padding: 0.3rem 0.6rem;
 }
-
-.region-source a { color: var(--gray); text-decoration: none; }
-.region-source a:hover { color: var(--blue-light); }
