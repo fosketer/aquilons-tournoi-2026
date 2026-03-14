@@ -1,7 +1,7 @@
 // js/pages/classement.js
 import { getTournoiActif, getTournoiConfig, setTournoiActif, listTournois } from '../config.js';
 import { fetchSheet } from '../lib/sheets.js';
-import { showLoading, showError, showEmpty } from '../lib/ui.js';
+import { showLoading, showError, showEmpty, escapeHTML } from '../lib/ui.js';
 import '../components/app-header.js';
 
 const app = document.getElementById('app');
@@ -156,10 +156,10 @@ function renderPools(pools, data, allMatches, containerId, aquilonName) {
             var isAq = t.name === aquilonName;
             var cls = isAq ? ' class="highlight"' : '';
             if (!hasData) {
-                return '<tr' + cls + '><td>' + shortName(t.name) + '</td><td class="no-data" colspan="5">\u2014</td></tr>';
+                return '<tr' + cls + '><td>' + escapeHTML(shortName(t.name)) + '</td><td class="no-data" colspan="5">\u2014</td></tr>';
             }
             return '<tr' + cls + '>' +
-                '<td>' + shortName(t.name) + '</td>' +
+                '<td>' + escapeHTML(shortName(t.name)) + '</td>' +
                 '<td>' + (t.sg || '-') + '</td>' +
                 '<td>' + (t.sp || '-') + '</td>' +
                 '<td>' + (t.pp || '-') + '</td>' +
@@ -182,9 +182,9 @@ function renderPools(pools, data, allMatches, containerId, aquilonName) {
                 var clsA = isAqA ? ' aq' : '';
                 var clsB = isAqB ? ' aq' : '';
                 matchHtml += '<div class="ml-row">' +
-                    '<span class="ml-team right' + clsA + '">' + shortName(m.teamA) + '</span>' +
+                    '<span class="ml-team right' + clsA + '">' + escapeHTML(shortName(m.teamA)) + '</span>' +
                     '<span class="ml-sets"><span class="' + (m.setsA > m.setsB ? 'w' : m.setsA < m.setsB ? 'l' : '') + '">' + m.setsA + '</span>-<span class="' + (m.setsB > m.setsA ? 'w' : m.setsB < m.setsA ? 'l' : '') + '">' + m.setsB + '</span></span>' +
-                    '<span class="ml-team' + clsB + '">' + shortName(m.teamB) + '</span>' +
+                    '<span class="ml-team' + clsB + '">' + escapeHTML(shortName(m.teamB)) + '</span>' +
                     '<span class="ml-detail">(' + m.scores + ')</span>' +
                     '</div>';
             });
@@ -192,7 +192,7 @@ function renderPools(pools, data, allMatches, containerId, aquilonName) {
         }
 
         return '<div class="pool-card">' +
-            '<div class="pool-header"><span class="pool-name">' + pool.name + '</span><span class="pool-status">' + status + '</span></div>' +
+            '<div class="pool-header"><span class="pool-name">' + escapeHTML(pool.name) + '</span><span class="pool-status">' + status + '</span></div>' +
             '<table class="pool-table"><thead><tr><th>\u00c9quipe</th>' + thExtra + '</tr></thead><tbody>' + rows + '</tbody></table>' +
             matchHtml + '</div>';
     }).join('');
@@ -209,7 +209,7 @@ function renderCrossRanking(seconds, aquilonName) {
         var ratio = t.sp > 0 ? (t.sg / t.sp).toFixed(2) : (t.sg > 0 ? '\u221e' : '0');
         return '<tr' + cls + '>' +
             '<td class="rg-cell">' + (labels[i] || (i+1)) + '</td>' +
-            '<td>' + shortName(t.name) + '</td>' +
+            '<td>' + escapeHTML(shortName(t.name)) + '</td>' +
             '<td class="ratio">' + t.pool.replace('Pool ', '') + '</td>' +
             '<td>' + t.sg + '</td><td>' + t.sp + '</td>' +
             '<td class="ratio">' + ratio + '</td>' +
@@ -254,7 +254,7 @@ function renderProjection(poolData, seconds, aquilonName) {
 
     container.innerHTML = '<div class="proj-card">' +
         '<div class="proj-title">Projection Aquilons</div>' +
-        '<div class="proj-line"><span class="hl">' + aqRank + (aqRank===1?'er':'e') + '</span> en ' + aqPool + '</div>' +
+        '<div class="proj-line"><span class="hl">' + aqRank + (aqRank===1?'er':'e') + '</span> en ' + escapeHTML(aqPool) + '</div>' +
         '<div class="proj-line">' + seedLabel + '</div>' +
         '<div class="proj-line detail" style="margin-top:0.3rem;color:var(--gray);font-size:0.7rem">Mise \u00e0 jour auto toutes les 2 min</div>' +
         '</div>';

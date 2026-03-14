@@ -4,6 +4,8 @@
 //   const card = document.createElement('match-card');
 //   card.data = { match: matchObject, adversaires: adversairesMap };
 
+import { escapeHTML } from '../lib/ui.js';
+
 function _scoreCell(aqScore, advScore) {
     if (aqScore == null) return { aq: '-', adv: '-', aqCls: '', advCls: '' };
     var won = aqScore > advScore;
@@ -14,8 +16,8 @@ function _advInfoHtml(nom, adversaires) {
     var a = adversaires[nom];
     if (!a) return '';
     var parts = [];
-    if (a.region_rseq) parts.push(a.region_rseq);
-    if (a.rang_regional) parts.push(a.rang_regional + (a.rang_regional === 1 ? 'er' : 'e') + ' r\u00e9gional');
+    if (a.region_rseq) parts.push(escapeHTML(a.region_rseq));
+    if (a.rang_regional) parts.push(escapeHTML(String(a.rang_regional)) + (a.rang_regional === 1 ? 'er' : 'e') + ' r\u00e9gional');
     return parts.length ? '<span class="team-info"> \u2014 ' + parts.join(' \u00b7 ') + '</span>' : '';
 }
 
@@ -25,8 +27,8 @@ function _advStatsHtml(nom, adversaires) {
     var hasStats = a.sets_gagnes != null && a.sets_perdus != null;
     if (!hasStats && !a.nom_officiel && !a.ecole) return '';
     var html = '<div class="adv-stats">';
-    if (a.nom_officiel) html += '<div class="adv-school">' + a.nom_officiel + (a.ecole ? ' <span class="adv-ecole">(' + a.ecole + ')</span>' : '') + '</div>';
-    else if (a.ecole) html += '<div class="adv-school">' + a.ecole + '</div>';
+    if (a.nom_officiel) html += '<div class="adv-school">' + escapeHTML(a.nom_officiel) + (a.ecole ? ' <span class="adv-ecole">(' + escapeHTML(a.ecole) + ')</span>' : '') + '</div>';
+    else if (a.ecole) html += '<div class="adv-school">' + escapeHTML(a.ecole) + '</div>';
     if (hasStats) {
         html += '<div class="adv-stat-row">';
         html += '<span class="adv-stat">Sets: <b>' + a.sets_gagnes + 'G-' + a.sets_perdus + 'P</b></span>';
@@ -38,13 +40,13 @@ function _advStatsHtml(nom, adversaires) {
     return html;
 }
 
-var _statusMap = {
+const _statusMap = {
     win:  { cls: 'win',  badge: 'badge-win',  text: 'Victoire' },
     loss: { cls: 'loss', badge: 'badge-loss', text: 'D\u00e9faite' },
     draw: { cls: 'draw', badge: 'badge-draw', text: '\u00c9galit\u00e9' },
     live: { cls: 'live', badge: 'badge-live', text: '\u25CF En cours' }
 };
-var _defaultStatus = { cls: 'upcoming', badge: 'badge-upcoming', text: '\u00c0 venir' };
+const _defaultStatus = { cls: 'upcoming', badge: 'badge-upcoming', text: '\u00c0 venir' };
 
 class MatchCard extends HTMLElement {
 
@@ -67,6 +69,12 @@ class MatchCard extends HTMLElement {
         var s2 = _scoreCell(m.aq_set2, m.adv_set2);
         var s3 = _scoreCell(m.aq_set3, m.adv_set3);
 
+        var safeAdversaire = escapeHTML(m.adversaire || '');
+        var safeHeure = escapeHTML(m.heure || '');
+        var safeLieuNom = escapeHTML(m.lieu_nom || '');
+        var safeTerrain = escapeHTML(m.terrain || '');
+        var safeLieuAdresse = escapeHTML(m.lieu_adresse || '');
+
         // For live match, show current score as extra column
         var liveCol = '';
         var liveColAdv = '';
@@ -80,10 +88,15 @@ class MatchCard extends HTMLElement {
             liveInfo = '<div class="match-live-score">Set ' + m.set_courant + ' en cours</div>';
         }
 
+        var mapsLink = '';
+        if (m.lieu_maps_url && /^https:\/\//.test(m.lieu_maps_url)) {
+            mapsLink = '<a href="' + escapeHTML(m.lieu_maps_url) + '" target="_blank" class="loc-map">Ouvrir dans Maps</a>';
+        }
+
         this.innerHTML =
             '<div class="match-card ' + st.cls + '">' +
                 '<div class="match-header">' +
-                    '<span class="match-time">' + m.heure + '</span>' +
+                    '<span class="match-time">' + safeHeure + '</span>' +
                     '<span class="match-badge ' + st.badge + '">' + st.text + '</span>' +
                 '</div>' +
                 '<div class="match-body"><div class="match-teams">' +
@@ -97,7 +110,7 @@ class MatchCard extends HTMLElement {
                         '</div>' +
                     '</div>' +
                     '<div class="team-row">' +
-                        '<span class="team-label">' + m.adversaire + _advInfoHtml(m.adversaire, adversaires) + '</span>' +
+                        '<span class="team-label">' + safeAdversaire + _advInfoHtml(m.adversaire, adversaires) + '</span>' +
                         _advStatsHtml(m.adversaire, adversaires) +
                         '<div class="set-scores">' +
                             '<span class="set-score ' + s1.advCls + '">' + s1.adv + '</span>' +
@@ -111,9 +124,9 @@ class MatchCard extends HTMLElement {
                 '<div class="match-location">' +
                     '<span class="pin">&#128205;</span>' +
                     '<div class="loc-info">' +
-                        '<div class="loc-venue">' + m.lieu_nom + ' &mdash; ' + m.terrain + '</div>' +
-                        '<div class="loc-addr">' + (m.lieu_adresse || '') + '</div>' +
-                        (m.lieu_maps_url ? '<a href="' + m.lieu_maps_url + '" target="_blank" class="loc-map">Ouvrir dans Maps</a>' : '') +
+                        '<div class="loc-venue">' + safeLieuNom + ' &mdash; ' + safeTerrain + '</div>' +
+                        '<div class="loc-addr">' + safeLieuAdresse + '</div>' +
+                        mapsLink +
                     '</div>' +
                 '</div>' +
             '</div>';
