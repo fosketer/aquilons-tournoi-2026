@@ -7,6 +7,7 @@ import { showLoading, showError, escapeHTML } from '../lib/ui.js';
 import { polling } from '../lib/polling.js';
 import { BRACKET_SCAN_INTERVAL_MS } from '../lib/constants.js';
 import { scanBracketForAquilon } from '../modules/bracket-scanner.js';
+import { computeBilan, formatSetInfo } from '../modules/match-renderer.js';
 import '../components/app-header.js';
 import '../components/match-card.js';
 
@@ -149,13 +150,7 @@ function renderScoreboard(matchs) {
     const isLive = !!live;
     const aqScore = isLive ? (target.aq_score_courant || 0) : 0;
     const advScore = isLive ? (target.adv_score_courant || 0) : 0;
-    let setInfo = '';
-
-    if (isLive && target.set_courant > 0) {
-        setInfo = 'Set ' + target.set_courant + ' en cours';
-    } else if (!isLive) {
-        setInfo = escapeHTML(target.heure || '') + (target.match_externe ? ' \u00b7 M' + target.match_externe : '');
-    }
+    const setInfo = formatSetInfo(target);
 
     let setsHtml = '';
     const setData = [
@@ -247,15 +242,7 @@ function renderMatchs(matchs) {
 }
 
 function updateBilan(matchs) {
-    let wins = 0, losses = 0, draws = 0, setsW = 0, setsL = 0;
-    matchs.forEach(function(m) {
-        if (m.statut === 'win') wins++;
-        if (m.statut === 'loss') losses++;
-        if (m.statut === 'draw') draws++;
-        if (m.aq_set1 != null && m.adv_set1 != null) { m.aq_set1 > m.adv_set1 ? setsW++ : setsL++; }
-        if (m.aq_set2 != null && m.adv_set2 != null) { m.aq_set2 > m.adv_set2 ? setsW++ : setsL++; }
-        if (m.aq_set3 != null && m.adv_set3 != null) { m.aq_set3 > m.adv_set3 ? setsW++ : setsL++; }
-    });
+    const { wins, losses, draws, setsW, setsL } = computeBilan(matchs);
     document.getElementById('bilanWins').textContent = wins;
     document.getElementById('bilanDraws').textContent = draws;
     document.getElementById('bilanLosses').textContent = losses;
