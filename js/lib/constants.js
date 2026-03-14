@@ -2,6 +2,7 @@
 // Named constants replacing magic numbers across the codebase.
 
 // Polling intervals (milliseconds)
+export const MATCH_POLL_INTERVAL_MS = 15000; // 15 seconds fallback poll
 export const BRACKET_SCAN_INTERVAL_MS = 120000; // 2 minutes
 export const SHEETS_REFRESH_INTERVAL_MS = 120000; // 2 minutes
 export const TOURNOI_LIST_CACHE_TTL_MS = 300000; // 5 minutes

@@ -28,13 +28,69 @@ export async function fetchRows(table, filters = {}, options = {}) {
     return data;
 }
 
-export function subscribe(channel, table, callback) {
-    return getClient()
-        .channel(channel)
-        .on('postgres_changes', { event: '*', schema: 'public', table }, callback)
-        .subscribe();
+const RECONNECT_DELAY_MS = 3000;
+const MAX_RECONNECT_DELAY_MS = 30000;
+
+const activeSubscriptions = new Map();
+
+export function subscribe(channelName, table, callback) {
+    // Clean up any existing subscription with this name
+    unsubscribe(channelName);
+
+    let reconnectDelay = RECONNECT_DELAY_MS;
+    let reconnectTimer = null;
+    let removed = false;
+
+    function connect() {
+        if (removed) return;
+        const ch = getClient()
+            .channel(channelName)
+            .on('postgres_changes', { event: '*', schema: 'public', table }, callback)
+            .subscribe(function(status, err) {
+                if (removed) return;
+                if (status === 'SUBSCRIBED') {
+                    reconnectDelay = RECONNECT_DELAY_MS;
+                    console.log('[realtime] ' + channelName + ' connected');
+                } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                    console.warn('[realtime] ' + channelName + ' ' + status + (err ? ': ' + err : '') + ', reconnecting in ' + reconnectDelay + 'ms');
+                    scheduleReconnect();
+                }
+            });
+        activeSubscriptions.set(channelName, { channel: ch, reconnect: connect, remove: cleanup });
+    }
+
+    function scheduleReconnect() {
+        if (removed || reconnectTimer) return;
+        reconnectTimer = setTimeout(function() {
+            reconnectTimer = null;
+            if (removed) return;
+            try { getClient().removeChannel(activeSubscriptions.get(channelName)?.channel); } catch(e) {}
+            connect();
+        }, reconnectDelay);
+        reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY_MS);
+    }
+
+    function cleanup() {
+        removed = true;
+        if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+    }
+
+    connect();
+}
+
+export function unsubscribe(channelName) {
+    const sub = activeSubscriptions.get(channelName);
+    if (sub) {
+        sub.remove();
+        try { getClient().removeChannel(sub.channel); } catch(e) {}
+        activeSubscriptions.delete(channelName);
+    }
 }
 
 export function removeAllChannels() {
+    for (const [, sub] of activeSubscriptions) {
+        sub.remove();
+    }
+    activeSubscriptions.clear();
     getClient().removeAllChannels();
 }

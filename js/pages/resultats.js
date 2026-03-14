@@ -5,7 +5,7 @@ import { createEngine } from '../lib/scorekeeper-engine.js';
 import { fetchSheet } from '../lib/sheets.js';
 import { showLoading, showError, escapeHTML, formatAdversaryInfo } from '../lib/ui.js';
 import { polling } from '../lib/polling.js';
-import { BRACKET_SCAN_INTERVAL_MS } from '../lib/constants.js';
+import { BRACKET_SCAN_INTERVAL_MS, MATCH_POLL_INTERVAL_MS } from '../lib/constants.js';
 import { scanBracketForAquilon } from '../modules/bracket-scanner.js';
 import { computeBilan, formatSetInfo } from '../modules/match-renderer.js';
 import '../components/app-header.js';
@@ -688,10 +688,22 @@ async function init(slug) {
         // Realtime subscription
         subscribe('matchs-realtime', 'matchs', function() { loadMatchs(config); });
 
+        // Polling fallback — catches cases where realtime silently drops
+        polling.schedule('match-poll', function() { loadMatchs(config); }, MATCH_POLL_INTERVAL_MS);
+
+        // Visibility handler — refresh data when phone wakes up
+        function onVisibilityChange() {
+            if (!document.hidden) {
+                loadMatchs(config);
+            }
+        }
+        document.addEventListener('visibilitychange', onVisibilityChange);
+
         // Cleanup function
         cleanup = function() {
             removeAllChannels();
             polling.cancelAll();
+            document.removeEventListener('visibilitychange', onVisibilityChange);
             bracketScanStarted = false;
             adversairesMap = {};
             matchDbId = null;
