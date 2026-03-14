@@ -3,9 +3,11 @@ import { getTournoiActif, getTournoiConfig, setTournoiActif, listTournois } from
 import { getClient, fetchRows, subscribe, removeAllChannels } from '../lib/supabase.js';
 import { createEngine } from '../lib/scorekeeper-engine.js';
 import { fetchSheet } from '../lib/sheets.js';
-import { showLoading, showError, escapeHTML } from '../lib/ui.js';
+import { showLoading, showError, escapeHTML, formatAdversaryInfo } from '../lib/ui.js';
 import { polling } from '../lib/polling.js';
 import { BRACKET_SCAN_INTERVAL_MS } from '../lib/constants.js';
+import { scanBracketForAquilon } from '../modules/bracket-scanner.js';
+import { computeBilan, formatSetInfo } from '../modules/match-renderer.js';
 import '../components/app-header.js';
 import '../components/match-card.js';
 
@@ -114,12 +116,7 @@ async function loadAdversaires(config) {
 }
 
 function advInfoText(nom) {
-    const a = adversairesMap[nom];
-    if (!a) return '';
-    const parts = [];
-    if (a.region_rseq) parts.push(a.region_rseq);
-    if (a.rang_regional) parts.push(a.rang_regional + (a.rang_regional === 1 ? 'er' : 'e') + ' r\u00e9gional');
-    return parts.join(' \u00b7 ');
+    return formatAdversaryInfo(adversairesMap[nom]);
 }
 
 // ==========================================
@@ -148,13 +145,7 @@ function renderScoreboard(matchs) {
     const isLive = !!live;
     const aqScore = isLive ? (target.aq_score_courant || 0) : 0;
     const advScore = isLive ? (target.adv_score_courant || 0) : 0;
-    let setInfo = '';
-
-    if (isLive && target.set_courant > 0) {
-        setInfo = 'Set ' + target.set_courant + ' en cours';
-    } else if (!isLive) {
-        setInfo = escapeHTML(target.heure || '') + (target.match_externe ? ' \u00b7 M' + target.match_externe : '');
-    }
+    const setInfo = formatSetInfo(target);
 
     let setsHtml = '';
     const setData = [
@@ -246,15 +237,7 @@ function renderMatchs(matchs) {
 }
 
 function updateBilan(matchs) {
-    let wins = 0, losses = 0, draws = 0, setsW = 0, setsL = 0;
-    matchs.forEach(function(m) {
-        if (m.statut === 'win') wins++;
-        if (m.statut === 'loss') losses++;
-        if (m.statut === 'draw') draws++;
-        if (m.aq_set1 != null && m.adv_set1 != null) { m.aq_set1 > m.adv_set1 ? setsW++ : setsL++; }
-        if (m.aq_set2 != null && m.adv_set2 != null) { m.aq_set2 > m.adv_set2 ? setsW++ : setsL++; }
-        if (m.aq_set3 != null && m.adv_set3 != null) { m.aq_set3 > m.adv_set3 ? setsW++ : setsL++; }
-    });
+    const { wins, losses, draws, setsW, setsL } = computeBilan(matchs);
     document.getElementById('bilanWins').textContent = wins;
     document.getElementById('bilanDraws').textContent = draws;
     document.getElementById('bilanLosses').textContent = losses;
@@ -282,7 +265,7 @@ function skSave() {
     } catch(e) { console.error('[skSave] Failed to save scorekeeper state:', e); }
 }
 
-function skLoad() {
+async function skLoad() {
     try {
         const s = localStorage.getItem(SK_KEY);
         if (!s) return;
@@ -297,11 +280,11 @@ function skLoad() {
             document.getElementById('skAdvInfo').textContent = advInfoText(skSession.advName);
             document.getElementById('skPanel').classList.add('show');
             skApplyUI();
-            getClient().from('matchs').select('id')
+            const res = await getClient().from('matchs').select('id')
                 .eq('tournoi_id', currentConfig.id)
                 .eq('numero', parseInt(skSession.matchNum))
-                .single()
-                .then(function(res) { if (res.data) matchDbId = res.data.id; });
+                .single();
+            if (res.data) matchDbId = res.data.id;
         }
     } catch(e) { console.error('[skLoad] Failed to restore scorekeeper state:', e); }
 }
@@ -395,17 +378,22 @@ function skSync() {
     } else {
         updates.statut = 'live';
     }
-    sb.from('matchs').update(updates).eq('id', matchDbId).then(function(res) {
-        if (res.error) skSetSync('Erreur sync', 'error');
-        else skSetSync('Sync OK', 'connected');
-    });
+    sb.from('matchs').update(updates).eq('id', matchDbId)
+        .then(function(res) {
+            if (res.error) skSetSync('Erreur sync', 'error');
+            else skSetSync('Sync OK', 'connected');
+        })
+        .catch(function(error) {
+            console.error('[skSync] Update failed:', error);
+            skSetSync('Erreur sync', 'error');
+        });
 }
 
 // ==========================================
 // SCOREKEEPER ACTIONS
 // ==========================================
 
-function skSelectMatch() {
+async function skSelectMatch() {
     const sel = document.getElementById('skMatchSelect');
     const opt = sel.options[sel.selectedIndex];
     if (!opt.value) {
@@ -429,17 +417,20 @@ function skSelectMatch() {
     skUpdateDisabled();
     skSave();
 
-    const sbClient = getClient();
-    sbClient.from('matchs').select('id')
-        .eq('tournoi_id', currentConfig.id)
-        .eq('numero', parseInt(opt.value))
-        .single()
-        .then(function(res) {
-            if (res.data) {
-                matchDbId = res.data.id;
-                sbClient.from('points').delete().eq('match_id', matchDbId).then(function() { skSync(); });
-            }
-        });
+    try {
+        const sbClient = getClient();
+        const res = await sbClient.from('matchs').select('id')
+            .eq('tournoi_id', currentConfig.id)
+            .eq('numero', parseInt(opt.value))
+            .single();
+        if (res.data) {
+            matchDbId = res.data.id;
+            await sbClient.from('points').delete().eq('match_id', matchDbId);
+            skSync();
+        }
+    } catch (error) {
+        console.error('[skSelectMatch] Failed:', error);
+    }
 }
 
 function skPoint(team) {
@@ -459,7 +450,7 @@ function skPoint(team) {
             equipe: team,
             aq_score: result.aqScore,
             adv_score: result.advScore
-        }).then(function() {});
+        }).catch(function(error) { console.error('[skPoint] Insert failed:', error); });
     }
 
     if (result.setEnded) {
@@ -489,7 +480,7 @@ function skShowResult(st) {
         '<div class="rd">' + details + '</div>';
 }
 
-function skMinus(team) {
+async function skMinus(team) {
     if (!skSession.matchNum) return;
     if (!engine.undoPoint(team)) return;
 
@@ -499,15 +490,19 @@ function skMinus(team) {
     skSave();
 
     if (matchDbId) {
-        const sbClient = getClient();
-        sbClient.from('points').select('id')
-            .eq('match_id', matchDbId)
-            .eq('equipe', team)
-            .order('id', { ascending: false })
-            .limit(1)
-            .then(function(res) {
-                if (res.data && res.data[0]) sbClient.from('points').delete().eq('id', res.data[0].id).then(function() {});
-            });
+        try {
+            const sbClient = getClient();
+            const res = await sbClient.from('points').select('id')
+                .eq('match_id', matchDbId)
+                .eq('equipe', team)
+                .order('id', { ascending: false })
+                .limit(1);
+            if (res.data && res.data[0]) {
+                await sbClient.from('points').delete().eq('id', res.data[0].id);
+            }
+        } catch (error) {
+            console.error('[skMinus] Delete failed:', error);
+        }
         skSync();
     }
 }
@@ -523,7 +518,8 @@ function skResetSet() {
 
     if (matchDbId) {
         const sbClient = getClient();
-        sbClient.from('points').delete().eq('match_id', matchDbId).eq('set_num', setNum).then(function() {});
+        sbClient.from('points').delete().eq('match_id', matchDbId).eq('set_num', setNum)
+            .catch(function(error) { console.error('[skResetSet] Delete failed:', error); });
         skSync();
     }
 }
@@ -553,82 +549,6 @@ function buildMatchDropdown(matchs) {
 // ==========================================
 // BRACKET SCANNER (Day 2 elimination matches)
 // ==========================================
-
-function scanBracketForAquilon(rows) {
-    const matches = [];
-
-    // Step 1: Find all "Match N" cells
-    const matchCells = [];
-    for (let r = 0; r < rows.length; r++) {
-        for (let c = 0; c < rows[r].length; c++) {
-            const val = rows[r][c].trim();
-            const mm = val.match(/^Match (\d+)$/);
-            if (mm) {
-                matchCells.push({ row: r, col: c, num: parseInt(mm[1]) });
-            }
-        }
-    }
-
-    // Step 2: For each match, find the two teams, time, and terrain
-    matchCells.forEach(function(mc) {
-        let team1 = null, team2 = null, time = null, terrain = null;
-
-        // Scan nearby rows and columns for time, terrain
-        for (let r = Math.max(0, mc.row - 6); r <= Math.min(rows.length - 1, mc.row + 6); r++) {
-            for (let c = Math.max(0, mc.col - 3); c <= Math.min((rows[r] || []).length - 1, mc.col + 3); c++) {
-                const v = (rows[r][c] || '').trim();
-                if (!v) continue;
-                if (!time && /^\d{1,2}h\d{2}$/.test(v)) { time = v; continue; }
-                if (!terrain && /^Terrain \d+$/.test(v)) { terrain = v; continue; }
-            }
-        }
-
-        // Find teams
-        let teamCandidates = [];
-        for (let r2 = Math.max(0, mc.row - 4); r2 <= Math.min(rows.length - 1, mc.row + 4); r2++) {
-            for (let c2 = Math.max(0, mc.col - 3); c2 <= Math.min((rows[r2] || []).length - 1, mc.col + 3); c2++) {
-                const v2 = (rows[r2][c2] || '').trim();
-                if (!v2) continue;
-                if (/^(Match|Terrain|GM|PM|\d{1,2}h\d{2}|Tournoi|Benjamin|Alma|Huiti|Quart|Demi|Finale|6-7)/.test(v2)) continue;
-                if (/[a-zA-Z\u00C0-\u017F]/.test(v2) && v2.length > 1) {
-                    teamCandidates.push({ row: r2, col: c2, name: v2 });
-                }
-            }
-        }
-
-        // Remove duplicates and sort by distance
-        const seen = {};
-        teamCandidates = teamCandidates.filter(function(t) {
-            if (seen[t.name]) return false;
-            seen[t.name] = true;
-            return true;
-        }).sort(function(a, b) {
-            return Math.abs(a.row - mc.row) - Math.abs(b.row - mc.row);
-        });
-
-        if (teamCandidates.length >= 2) { team1 = teamCandidates[0].name; team2 = teamCandidates[1].name; }
-        else if (teamCandidates.length === 1) { team1 = teamCandidates[0].name; }
-
-        let hasAquilon = false;
-        let opponent = null;
-        [team1, team2].forEach(function(t) {
-            if (t && /aquilon/i.test(t)) { hasAquilon = true; }
-        });
-
-        if (hasAquilon) {
-            if (team1 && !/aquilon/i.test(team1)) opponent = team1;
-            else if (team2 && !/aquilon/i.test(team2)) opponent = team2;
-            matches.push({
-                matchExterne: mc.num,
-                adversaire: opponent || 'TBD',
-                heure: time || '',
-                terrain: terrain || ''
-            });
-        }
-    });
-
-    return matches;
-}
 
 async function scanBrackets(config, cfg) {
     const sheetId = cfg.sheets.id;
@@ -757,7 +677,7 @@ async function init(slug) {
         // Load data
         await loadAdversaires(config);
         await loadMatchs(config);
-        skLoad();
+        await skLoad();
 
         // Start bracket scanner if scorekeeper is visible and tournament has sheets
         if (bracketScanStarted && cfg.sheets) {
