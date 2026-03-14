@@ -450,7 +450,7 @@ function skPoint(team) {
             equipe: team,
             aq_score: result.aqScore,
             adv_score: result.advScore
-        }).catch(function(error) { console.error('[skPoint] Insert failed:', error); });
+        }).then(null, function(error) { console.error('[skPoint] Insert failed:', error); });
     }
 
     if (result.setEnded) {
@@ -519,7 +519,7 @@ function skResetSet() {
     if (matchDbId) {
         const sbClient = getClient();
         sbClient.from('points').delete().eq('match_id', matchDbId).eq('set_num', setNum)
-            .catch(function(error) { console.error('[skResetSet] Delete failed:', error); });
+            .then(null, function(error) { console.error('[skResetSet] Delete failed:', error); });
         skSync();
     }
 }
