@@ -12,10 +12,10 @@ let cleanup = null;
 // ==========================================
 
 function computeStats(matchs) {
-    var wins = 0, losses = 0, draws = 0;
-    var setsWon = 0, setsLost = 0, setsPlayed = 0;
-    var pointsFor = 0, pointsAgainst = 0;
-    var completed = [];
+    let wins = 0, losses = 0, draws = 0;
+    let setsWon = 0, setsLost = 0, setsPlayed = 0;
+    let pointsFor = 0, pointsAgainst = 0;
+    const completed = [];
 
     matchs.forEach(function(m) {
         if (m.statut === 'win') wins++;
@@ -24,13 +24,13 @@ function computeStats(matchs) {
 
         if (m.statut !== 'win' && m.statut !== 'loss' && m.statut !== 'draw') return;
 
-        var matchSets = [];
-        var setData = [
+        const matchSets = [];
+        const setData = [
             { aq: m.aq_set1, adv: m.adv_set1 },
             { aq: m.aq_set2, adv: m.adv_set2 },
             { aq: m.aq_set3, adv: m.adv_set3 }
         ];
-        var mPtsFor = 0, mPtsAgainst = 0, mSetsW = 0, mSetsL = 0;
+        let mPtsFor = 0, mPtsAgainst = 0, mSetsW = 0, mSetsL = 0;
 
         setData.forEach(function(s) {
             if (s.aq == null || s.adv == null) return;
@@ -94,21 +94,21 @@ function buildPageHTML(tournoiNom) {
 // ==========================================
 
 function renderPerformance(stats) {
-    var el = document.getElementById('perfSection');
+    const el = document.getElementById('perfSection');
 
     if (stats.playedMatchs === 0) {
         el.innerHTML = '<div class="st-empty">Aucun match jou\u00e9 pour le moment</div>';
         return;
     }
 
-    var total = stats.wins + stats.losses + stats.draws;
-    var winPct = total > 0 ? Math.round((stats.wins / total) * 100) : 0;
-    var setsTotal = stats.setsWon + stats.setsLost;
-    var setsPct = setsTotal > 0 ? Math.round((stats.setsWon / setsTotal) * 100) : 0;
-    var diffSign = stats.pointDiff >= 0 ? '+' : '';
-    var diffCls = stats.pointDiff >= 0 ? 'positive' : 'negative';
+    const total = stats.wins + stats.losses + stats.draws;
+    const winPct = total > 0 ? Math.round((stats.wins / total) * 100) : 0;
+    const setsTotal = stats.setsWon + stats.setsLost;
+    const setsPct = setsTotal > 0 ? Math.round((stats.setsWon / setsTotal) * 100) : 0;
+    const diffSign = stats.pointDiff >= 0 ? '+' : '';
+    const diffCls = stats.pointDiff >= 0 ? 'positive' : 'negative';
 
-    var h = '<div class="perf-card">';
+    let h = '<div class="perf-card">';
 
     // Big record
     h += '<div class="perf-record">';
@@ -155,21 +155,21 @@ function renderPerformance(stats) {
 // ==========================================
 
 function renderMatchResults(stats, advMap) {
-    var el = document.getElementById('matchResults');
+    const el = document.getElementById('matchResults');
 
     if (stats.completed.length === 0) {
         el.innerHTML = '<div class="st-empty">Aucun r\u00e9sultat disponible</div>';
         return;
     }
 
-    var html = '';
+    let html = '';
     stats.completed.forEach(function(c) {
-        var m = c.match;
-        var adv = advMap[m.adversaire] || {};
-        var isWin = m.statut === 'win';
-        var isDraw = m.statut === 'draw';
-        var cls = isWin ? 'win' : (isDraw ? 'draw' : 'loss');
-        var txt = isWin ? 'Victoire' : (isDraw ? '\u00c9galit\u00e9' : 'D\u00e9faite');
+        const m = c.match;
+        const adv = advMap[m.adversaire] || {};
+        const isWin = m.statut === 'win';
+        const isDraw = m.statut === 'draw';
+        const cls = isWin ? 'win' : (isDraw ? 'draw' : 'loss');
+        const txt = isWin ? 'Victoire' : (isDraw ? '\u00c9galit\u00e9' : 'D\u00e9faite');
 
         html += '<div class="mr-card ' + cls + '">';
 
@@ -194,7 +194,7 @@ function renderMatchResults(stats, advMap) {
         // Set scores
         html += '<div class="mr-sets">';
         c.sets.forEach(function(s, i) {
-            var won = s.aq > s.adv;
+            const won = s.aq > s.adv;
             html += '<div class="mr-set ' + (won ? 'won' : 'lost') + '">';
             html += '<span class="mr-set-lbl">Set ' + (i + 1) + '</span>';
             html += '<span class="mr-set-sc">' + s.aq + '\u2013' + s.adv + '</span>';
@@ -203,9 +203,9 @@ function renderMatchResults(stats, advMap) {
         html += '</div>';
 
         // Point diff bar
-        var maxDiff = 30;
-        var barPct = Math.min((Math.abs(c.pointDiff) / maxDiff) * 100, 100);
-        var sign = c.pointDiff >= 0 ? '+' : '';
+        const maxDiff = 30;
+        const barPct = Math.min((Math.abs(c.pointDiff) / maxDiff) * 100, 100);
+        const sign = c.pointDiff >= 0 ? '+' : '';
         html += '<div class="mr-diff">';
         html += '<span class="mr-diff-num">' + sign + c.pointDiff + ' pts</span>';
         html += '<div class="mr-diff-bar"><div class="mr-diff-fill ' + cls + '" style="width:' + barPct + '%"></div></div>';
@@ -222,10 +222,10 @@ function renderMatchResults(stats, advMap) {
 // ==========================================
 
 function renderAdversaires(advMap, matchs) {
-    var el = document.getElementById('adversaires');
+    const el = document.getElementById('adversaires');
 
     // Match result lookup
-    var results = {};
+    const results = {};
     matchs.forEach(function(m) {
         if (m.statut === 'win' || m.statut === 'loss' || m.statut === 'draw') {
             results[m.adversaire] = m;
@@ -233,8 +233,8 @@ function renderAdversaires(advMap, matchs) {
     });
 
     // Unique opponents from matchs
-    var opponents = [];
-    var seen = {};
+    const opponents = [];
+    const seen = {};
     matchs.forEach(function(m) {
         if (!m.adversaire || seen[m.adversaire]) return;
         seen[m.adversaire] = true;
@@ -248,18 +248,18 @@ function renderAdversaires(advMap, matchs) {
 
     // Sort: played first, then by regional rank
     opponents.sort(function(a, b) {
-        var ap = results[a] ? 1 : 0;
-        var bp = results[b] ? 1 : 0;
+        const ap = results[a] ? 1 : 0;
+        const bp = results[b] ? 1 : 0;
         if (ap !== bp) return bp - ap;
-        var ar = (advMap[a] || {}).rang_regional || 999;
-        var br = (advMap[b] || {}).rang_regional || 999;
+        const ar = (advMap[a] || {}).rang_regional || 999;
+        const br = (advMap[b] || {}).rang_regional || 999;
         return ar - br;
     });
 
-    var html = '';
+    let html = '';
     opponents.forEach(function(name) {
-        var adv = advMap[name] || {};
-        var m = results[name];
+        const adv = advMap[name] || {};
+        const m = results[name];
 
         html += '<div class="adv-card">';
 
@@ -272,7 +272,7 @@ function renderAdversaires(advMap, matchs) {
         }
         html += '</div>';
         if (adv.rang_regional) {
-            var topCls = adv.rang_regional <= 2 ? ' top' : '';
+            const topCls = adv.rang_regional <= 2 ? ' top' : '';
             html += '<div class="adv-badge' + topCls + '">' + adv.rang_regional + (adv.rang_regional === 1 ? 'er' : 'e') + '</div>';
         }
         html += '</div>';
@@ -284,8 +284,8 @@ function renderAdversaires(advMap, matchs) {
 
         // RSEQ season stats bar
         if (adv.sets_gagnes != null) {
-            var totalS = (adv.sets_gagnes || 0) + (adv.sets_perdus || 0);
-            var rate = totalS > 0 ? Math.round((adv.sets_gagnes / totalS) * 100) : 0;
+            const totalS = (adv.sets_gagnes || 0) + (adv.sets_perdus || 0);
+            const rate = totalS > 0 ? Math.round((adv.sets_gagnes / totalS) * 100) : 0;
             html += '<div class="adv-rseq">';
             html += '<span class="adv-rseq-txt">Saison RSEQ\u00a0: ' + adv.sets_gagnes + 'G\u2013' + adv.sets_perdus + 'P';
             if (adv.matchs_joues) html += ' (' + adv.matchs_joues + ' matchs)';
@@ -296,11 +296,11 @@ function renderAdversaires(advMap, matchs) {
 
         // Our result
         if (m) {
-            var isWin = m.statut === 'win';
-            var isDraw = m.statut === 'draw';
-            var rc = isWin ? 'win' : (isDraw ? 'draw' : 'loss');
-            var rt = isWin ? 'Victoire' : (isDraw ? '\u00c9galit\u00e9' : 'D\u00e9faite');
-            var sc = [];
+            const isWin = m.statut === 'win';
+            const isDraw = m.statut === 'draw';
+            const rc = isWin ? 'win' : (isDraw ? 'draw' : 'loss');
+            const rt = isWin ? 'Victoire' : (isDraw ? '\u00c9galit\u00e9' : 'D\u00e9faite');
+            const sc = [];
             if (m.aq_set1 != null) sc.push(m.aq_set1 + '\u2013' + m.adv_set1);
             if (m.aq_set2 != null) sc.push(m.aq_set2 + '\u2013' + m.adv_set2);
             if (m.aq_set3 != null) sc.push(m.aq_set3 + '\u2013' + m.adv_set3);
@@ -328,21 +328,21 @@ async function init(slug) {
     showLoading(app);
 
     try {
-        var config = await getTournoiConfig(slug);
+        const config = await getTournoiConfig(slug);
 
-        var data = await Promise.all([
+        const data = await Promise.all([
             fetchRows('matchs', { tournoi_id: config.id }, { order: 'numero' }),
             fetchRows('adversaires', { tournoi_id: config.id })
         ]);
 
-        var matchs = data[0] || [];
-        var advList = data[1] || [];
-        var advMap = {};
+        const matchs = data[0] || [];
+        const advList = data[1] || [];
+        const advMap = {};
         advList.forEach(function(a) { advMap[a.nom_tournoi] = a; });
 
         app.innerHTML = buildPageHTML(config.nom);
 
-        var stats = computeStats(matchs);
+        const stats = computeStats(matchs);
         renderPerformance(stats);
         renderMatchResults(stats, advMap);
         renderAdversaires(advMap, matchs);

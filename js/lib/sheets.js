@@ -1,9 +1,10 @@
 // js/lib/sheets.js
+import { SHEETS_CACHE_TTL_MS } from './constants.js';
 
 export function parseCSV(text) {
-    var lines = [], row = [], field = '', inQuote = false;
-    for (var i = 0; i < text.length; i++) {
-        var c = text[i];
+    let lines = [], row = [], field = '', inQuote = false;
+    for (let i = 0; i < text.length; i++) {
+        const c = text[i];
         if (c === '"') {
             if (inQuote && i + 1 < text.length && text[i + 1] === '"') { field += '"'; i++; }
             else { inQuote = !inQuote; }
@@ -19,16 +20,42 @@ export function parseCSV(text) {
     return lines;
 }
 
+const sheetCache = new Map();
+
+function hashContent(content) {
+    let hash = 0;
+    for (let i = 0; i < content.length; i++) {
+        const char = content.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash &= hash;
+    }
+    return hash.toString(36);
+}
+
 export async function fetchSheet(sheetId, gid) {
-    var url = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/gviz/tq?tqx=out:csv&gid=' + gid;
-    var res = await fetch(url);
+    const cacheKey = `${sheetId}_${gid}`;
+    const cached = sheetCache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < SHEETS_CACHE_TTL_MS) {
+        return cached.data;
+    }
+
+    const url = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/gviz/tq?tqx=out:csv&gid=' + gid;
+    const res = await fetch(url);
     if (!res.ok) throw new Error('Sheets fetch failed: ' + res.status);
-    var text = await res.text();
-    return parseCSV(text);
+    const text = await res.text();
+    const data = parseCSV(text);
+
+    sheetCache.set(cacheKey, { data, hash: hashContent(text), timestamp: Date.now() });
+    return data;
+}
+
+export function clearSheetsCache() {
+    sheetCache.clear();
 }
 
 export async function fetchCSV(url) {
-    var res = await fetch(url);
+    const res = await fetch(url);
     if (!res.ok) throw new Error('CSV fetch failed: ' + res.status);
     return res.text();
 }

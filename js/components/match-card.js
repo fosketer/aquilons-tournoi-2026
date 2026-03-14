@@ -8,25 +8,25 @@ import { escapeHTML } from '../lib/ui.js';
 
 function _scoreCell(aqScore, advScore) {
     if (aqScore == null) return { aq: '-', adv: '-', aqCls: '', advCls: '' };
-    var won = aqScore > advScore;
+    const won = aqScore > advScore;
     return { aq: aqScore, adv: advScore, aqCls: won ? 'won' : 'lost', advCls: won ? 'lost' : 'won' };
 }
 
 function _advInfoHtml(nom, adversaires) {
-    var a = adversaires[nom];
+    const a = adversaires[nom];
     if (!a) return '';
-    var parts = [];
+    const parts = [];
     if (a.region_rseq) parts.push(escapeHTML(a.region_rseq));
     if (a.rang_regional) parts.push(escapeHTML(String(a.rang_regional)) + (a.rang_regional === 1 ? 'er' : 'e') + ' r\u00e9gional');
     return parts.length ? '<span class="team-info"> \u2014 ' + parts.join(' \u00b7 ') + '</span>' : '';
 }
 
 function _advStatsHtml(nom, adversaires) {
-    var a = adversaires[nom];
+    const a = adversaires[nom];
     if (!a) return '';
-    var hasStats = a.sets_gagnes != null && a.sets_perdus != null;
+    const hasStats = a.sets_gagnes != null && a.sets_perdus != null;
     if (!hasStats && !a.nom_officiel && !a.ecole) return '';
-    var html = '<div class="adv-stats">';
+    let html = '<div class="adv-stats">';
     if (a.nom_officiel) html += '<div class="adv-school">' + escapeHTML(a.nom_officiel) + (a.ecole ? ' <span class="adv-ecole">(' + escapeHTML(a.ecole) + ')</span>' : '') + '</div>';
     else if (a.ecole) html += '<div class="adv-school">' + escapeHTML(a.ecole) + '</div>';
     if (hasStats) {
@@ -61,34 +61,34 @@ class MatchCard extends HTMLElement {
 
     _render() {
         if (!this._data) return;
-        var m = this._data.match;
-        var adversaires = this._data.adversaires || {};
+        const m = this._data.match;
+        const adversaires = this._data.adversaires || {};
 
-        var st = _statusMap[m.statut] || _defaultStatus;
-        var s1 = _scoreCell(m.aq_set1, m.adv_set1);
-        var s2 = _scoreCell(m.aq_set2, m.adv_set2);
-        var s3 = _scoreCell(m.aq_set3, m.adv_set3);
+        const st = _statusMap[m.statut] || _defaultStatus;
+        const s1 = _scoreCell(m.aq_set1, m.adv_set1);
+        const s2 = _scoreCell(m.aq_set2, m.adv_set2);
+        const s3 = _scoreCell(m.aq_set3, m.adv_set3);
 
-        var safeAdversaire = escapeHTML(m.adversaire || '');
-        var safeHeure = escapeHTML(m.heure || '');
-        var safeLieuNom = escapeHTML(m.lieu_nom || '');
-        var safeTerrain = escapeHTML(m.terrain || '');
-        var safeLieuAdresse = escapeHTML(m.lieu_adresse || '');
+        const safeAdversaire = escapeHTML(m.adversaire || '');
+        const safeHeure = escapeHTML(m.heure || '');
+        const safeLieuNom = escapeHTML(m.lieu_nom || '');
+        const safeTerrain = escapeHTML(m.terrain || '');
+        const safeLieuAdresse = escapeHTML(m.lieu_adresse || '');
 
         // For live match, show current score as extra column
-        var liveCol = '';
-        var liveColAdv = '';
+        let liveCol = '';
+        let liveColAdv = '';
         if (m.statut === 'live' && m.set_courant > 0) {
             liveCol = '<span class="set-score live-score">' + m.aq_score_courant + '</span>';
             liveColAdv = '<span class="set-score live-score">' + m.adv_score_courant + '</span>';
         }
 
-        var liveInfo = '';
+        let liveInfo = '';
         if (m.statut === 'live' && m.set_courant > 0) {
             liveInfo = '<div class="match-live-score">Set ' + m.set_courant + ' en cours</div>';
         }
 
-        var mapsLink = '';
+        let mapsLink = '';
         if (m.lieu_maps_url && /^https:\/\//.test(m.lieu_maps_url)) {
             mapsLink = '<a href="' + escapeHTML(m.lieu_maps_url) + '" target="_blank" class="loc-map">Ouvrir dans Maps</a>';
         }

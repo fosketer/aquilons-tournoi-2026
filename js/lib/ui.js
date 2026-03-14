@@ -17,7 +17,7 @@ export function showEmpty(container, message) {
     container.innerHTML = '<div class="empty-state">' + message + '</div>';
 }
 
-var _escDiv = null;
+let _escDiv = null;
 export function escapeHTML(str) {
     if (!_escDiv) _escDiv = document.createElement('div');
     _escDiv.textContent = str;
