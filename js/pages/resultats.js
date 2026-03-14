@@ -3,7 +3,7 @@ import { getTournoiActif, getTournoiConfig, setTournoiActif, listTournois } from
 import { getClient, fetchRows, subscribe, removeAllChannels } from '../lib/supabase.js';
 import { createEngine } from '../lib/scorekeeper-engine.js';
 import { fetchSheet } from '../lib/sheets.js';
-import { showLoading, showError, escapeHTML } from '../lib/ui.js';
+import { showLoading, showError, escapeHTML, formatAdversaryInfo } from '../lib/ui.js';
 import { polling } from '../lib/polling.js';
 import { BRACKET_SCAN_INTERVAL_MS } from '../lib/constants.js';
 import { scanBracketForAquilon } from '../modules/bracket-scanner.js';
@@ -116,12 +116,7 @@ async function loadAdversaires(config) {
 }
 
 function advInfoText(nom) {
-    const a = adversairesMap[nom];
-    if (!a) return '';
-    const parts = [];
-    if (a.region_rseq) parts.push(a.region_rseq);
-    if (a.rang_regional) parts.push(a.rang_regional + (a.rang_regional === 1 ? 'er' : 'e') + ' r\u00e9gional');
-    return parts.join(' \u00b7 ');
+    return formatAdversaryInfo(adversairesMap[nom]);
 }
 
 // ==========================================

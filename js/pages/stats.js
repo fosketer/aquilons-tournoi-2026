@@ -1,7 +1,7 @@
 // js/pages/stats.js
 import { getTournoiActif, getTournoiConfig, setTournoiActif, listTournois } from '../config.js';
 import { fetchRows } from '../lib/supabase.js';
-import { showLoading, showError, escapeHTML } from '../lib/ui.js';
+import { showLoading, showError, escapeHTML, formatAdversaryInfo } from '../lib/ui.js';
 import '../components/app-header.js';
 
 const app = document.getElementById('app');
@@ -184,10 +184,7 @@ function renderMatchResults(stats, advMap) {
         html += '<span class="mr-vs">vs</span>';
         html += '<span class="mr-name">' + escapeHTML(m.adversaire || '') + '</span>';
         if (adv.rang_regional || adv.region_rseq) {
-            html += '<span class="mr-rank">';
-            if (adv.rang_regional) html += adv.rang_regional + (adv.rang_regional === 1 ? 'er' : 'e');
-            if (adv.region_rseq) html += ' ' + escapeHTML(adv.region_rseq);
-            html += '</span>';
+            html += '<span class="mr-rank">' + escapeHTML(formatAdversaryInfo(adv)) + '</span>';
         }
         html += '</div>';
 
