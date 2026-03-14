@@ -1,7 +1,7 @@
 // js/pages/stats.js
 import { getTournoiActif, getTournoiConfig, setTournoiActif, listTournois } from '../config.js';
 import { fetchRows } from '../lib/supabase.js';
-import { showLoading, showError } from '../lib/ui.js';
+import { showLoading, showError, escapeHTML } from '../lib/ui.js';
 import '../components/app-header.js';
 
 const app = document.getElementById('app');
@@ -176,17 +176,17 @@ function renderMatchResults(stats, advMap) {
         // Header
         html += '<div class="mr-head">';
         html += '<span class="mr-status ' + cls + '">' + txt + '</span>';
-        html += '<span class="mr-time">Match ' + m.numero + ' \u00b7 ' + m.heure + '</span>';
+        html += '<span class="mr-time">Match ' + m.numero + ' \u00b7 ' + escapeHTML(m.heure || '') + '</span>';
         html += '</div>';
 
         // Opponent
         html += '<div class="mr-opp">';
         html += '<span class="mr-vs">vs</span>';
-        html += '<span class="mr-name">' + m.adversaire + '</span>';
+        html += '<span class="mr-name">' + escapeHTML(m.adversaire || '') + '</span>';
         if (adv.rang_regional || adv.region_rseq) {
             html += '<span class="mr-rank">';
             if (adv.rang_regional) html += adv.rang_regional + (adv.rang_regional === 1 ? 'er' : 'e');
-            if (adv.region_rseq) html += ' ' + adv.region_rseq;
+            if (adv.region_rseq) html += ' ' + escapeHTML(adv.region_rseq);
             html += '</span>';
         }
         html += '</div>';
@@ -266,9 +266,9 @@ function renderAdversaires(advMap, matchs) {
         // Name + rank badge
         html += '<div class="adv-top">';
         html += '<div class="adv-info">';
-        html += '<span class="adv-name">' + name + '</span>';
+        html += '<span class="adv-name">' + escapeHTML(name) + '</span>';
         if (adv.nom_officiel || adv.ecole) {
-            html += '<span class="adv-school">' + (adv.nom_officiel || adv.ecole) + '</span>';
+            html += '<span class="adv-school">' + escapeHTML(adv.nom_officiel || adv.ecole) + '</span>';
         }
         html += '</div>';
         if (adv.rang_regional) {
@@ -279,7 +279,7 @@ function renderAdversaires(advMap, matchs) {
 
         // Region
         if (adv.region_rseq) {
-            html += '<div class="adv-region">' + adv.region_rseq + '</div>';
+            html += '<div class="adv-region">' + escapeHTML(adv.region_rseq) + '</div>';
         }
 
         // RSEQ season stats bar
