@@ -75,7 +75,7 @@ function computeStats(matchs) {
 function buildPageHTML(tournoiNom) {
     return '<div class="content">' +
         '<div class="section-title">Performance' +
-            ' <span class="section-sub">' + tournoiNom + '</span>' +
+            ' <span class="section-sub">' + escapeHTML(tournoiNom || '') + '</span>' +
         '</div>' +
         '<div id="perfSection"></div>' +
 
