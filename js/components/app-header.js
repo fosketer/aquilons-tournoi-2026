@@ -23,16 +23,16 @@ class AppHeader extends HTMLElement {
 
         // Build buttons
         container.innerHTML = tournois.map(function (t) {
-            var cls = t.slug === actif ? 'tournoi-btn active' : 'tournoi-btn';
+            const cls = t.slug === actif ? 'tournoi-btn active' : 'tournoi-btn';
             return '<button class="' + cls + '" data-tournoi="' + t.slug + '">' +
                 escapeHTML(t.nom) + '</button>';
         }).join('');
 
         // Attach click handlers
-        var self = this;
+        const self = this;
         container.querySelectorAll('.tournoi-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                var slug = btn.dataset.tournoi;
+                const slug = btn.dataset.tournoi;
                 if (slug === actif) return;
                 actif = slug;
 
@@ -63,7 +63,7 @@ class AppHeader extends HTMLElement {
     }
 
     _buildFullHeader(page) {
-        var headerContent = '' +
+        const headerContent = '' +
             '<div class="header">' +
                 '<img src="logo.jpg" alt="Aquilons" class="header-logo">' +
                 '<div class="team-name">Aquilons</div>' +
@@ -71,14 +71,14 @@ class AppHeader extends HTMLElement {
                 (page === 'resultats' ? this._buildTournamentInfo() : '') +
             '</div>';
 
-        var navContent = '' +
+        const navContent = '' +
             '<div class="nav">' +
                 '<a href="index.html"' + (page === 'resultats' ? ' class="active"' : '') + '>R\u00e9sultats</a>' +
                 '<a href="classement.html"' + (page === 'classement' ? ' class="active"' : '') + '>Classement</a>' +
                 '<a href="stats.html"' + (page === 'stats' ? ' class="active"' : '') + '>Stats</a>' +
             '</div>';
 
-        var selectorContainer = '<div class="tournoi-selector"></div>';
+        const selectorContainer = '<div class="tournoi-selector"></div>';
 
         return headerContent + navContent + selectorContainer;
     }
@@ -95,13 +95,13 @@ class AppHeader extends HTMLElement {
      * Update the .tourney-name and .tourney-detail elements when tournament changes.
      */
     _updateTourneyInfo(tournois, actif) {
-        var t = tournois.find(function (item) { return item.slug === actif; });
+        const t = tournois.find(function (item) { return item.slug === actif; });
         if (!t) return;
 
-        var nameEl = this.querySelector('.tourney-name');
+        const nameEl = this.querySelector('.tourney-name');
         if (nameEl) nameEl.textContent = t.nom;
 
-        var detailEl = this.querySelector('.tourney-detail');
+        const detailEl = this.querySelector('.tourney-detail');
         if (detailEl) detailEl.textContent = (t.config && t.config.detail) || '';
     }
 
@@ -109,7 +109,7 @@ class AppHeader extends HTMLElement {
      * Hide the Classement nav link when the active tournament is not 'cvs'.
      */
     _updateClassementLink(actif) {
-        var link = this.querySelector('.nav a[href="classement.html"]');
+        const link = this.querySelector('.nav a[href="classement.html"]');
         if (link) {
             link.style.display = (actif === 'cvs') ? '' : 'none';
         }

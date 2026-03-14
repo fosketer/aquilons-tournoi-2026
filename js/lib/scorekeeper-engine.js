@@ -3,28 +3,28 @@
 //
 // Usage:
 //   import { createEngine } from './scorekeeper-engine.js';
-//   var engine = createEngine({ setsToWin: 2, pointsPerSet: [25, 25, 15], minLead: 2 });
-//   var result = engine.addPoint('aq');
+//   const engine = createEngine({ setsToWin: 2, pointsPerSet: [25, 25, 15], minLead: 2 });
+//   const result = engine.addPoint('aq');
 
-var DEFAULTS = {
+const DEFAULTS = {
     setsToWin: 2,
     pointsPerSet: [25, 25, 15],
     minLead: 2
 };
 
 export function createEngine(rules) {
-    var r = {
+    const r = {
         setsToWin: (rules && rules.setsToWin) || DEFAULTS.setsToWin,
         pointsPerSet: (rules && rules.pointsPerSet) || DEFAULTS.pointsPerSet,
         minLead: (rules && rules.minLead != null) ? rules.minLead : DEFAULTS.minLead
     };
 
-    var maxSets = r.setsToWin * 2 - 1;
-    var state = freshState();
+    const maxSets = r.setsToWin * 2 - 1;
+    let state = freshState();
 
     function freshState() {
-        var ts = {};
-        for (var i = 1; i <= maxSets; i++) {
+        const ts = {};
+        for (let i = 1; i <= maxSets; i++) {
             ts['set' + i + '_debut'] = null;
             ts['set' + i + '_fin'] = null;
         }
@@ -40,14 +40,14 @@ export function createEngine(rules) {
     }
 
     function targetPoints() {
-        var idx = state.currentSet - 1;
+        const idx = state.currentSet - 1;
         if (idx < r.pointsPerSet.length) return r.pointsPerSet[idx];
         return r.pointsPerSet[r.pointsPerSet.length - 1];
     }
 
     function isSetOver() {
-        var aq = state.aqScore, adv = state.advScore;
-        var target = targetPoints();
+        const aq = state.aqScore, adv = state.advScore;
+        const target = targetPoints();
         return (aq >= target || adv >= target) && Math.abs(aq - adv) >= r.minLead;
     }
 
@@ -73,7 +73,7 @@ export function createEngine(rules) {
             if (state.matchDone || state.currentSet > maxSets) return null;
 
             // Record set start on first point of the set
-            var tsKey = 'set' + state.currentSet + '_debut';
+            const tsKey = 'set' + state.currentSet + '_debut';
             if (!state.setTimestamps[tsKey]) {
                 state.setTimestamps[tsKey] = new Date().toISOString();
             }
@@ -82,7 +82,7 @@ export function createEngine(rules) {
             else state.advScore++;
             state.pointLog.push(team);
 
-            var result = {
+            const result = {
                 team: team,
                 set: state.currentSet,
                 aqScore: state.aqScore,
@@ -96,8 +96,8 @@ export function createEngine(rules) {
                 state.sets.push({ aq: state.aqScore, adv: state.advScore });
                 result.setEnded = true;
 
-                var wonAq = state.sets.filter(function(s) { return s.aq > s.adv; }).length;
-                var wonAdv = state.sets.length - wonAq;
+                const wonAq = state.sets.filter(function(s) { return s.aq > s.adv; }).length;
+                const wonAdv = state.sets.length - wonAq;
 
                 if (wonAq >= r.setsToWin || wonAdv >= r.setsToWin) {
                     state.matchDone = true;
@@ -125,7 +125,7 @@ export function createEngine(rules) {
             if (team === 'aq') state.aqScore--;
             else state.advScore--;
 
-            for (var i = state.pointLog.length - 1; i >= 0; i--) {
+            for (let i = state.pointLog.length - 1; i >= 0; i--) {
                 if (state.pointLog[i] === team) {
                     state.pointLog.splice(i, 1);
                     break;
@@ -140,7 +140,7 @@ export function createEngine(rules) {
          */
         resetSet: function() {
             if (state.matchDone) return false;
-            var n = state.currentSet;
+            const n = state.currentSet;
             state.aqScore = 0;
             state.advScore = 0;
             state.pointLog = [];
@@ -178,12 +178,12 @@ export function createEngine(rules) {
 
         /** Format duration of a completed set as "m:ss". */
         setDuration: function(setNum) {
-            var debut = state.setTimestamps['set' + setNum + '_debut'];
-            var fin = state.setTimestamps['set' + setNum + '_fin'];
+            const debut = state.setTimestamps['set' + setNum + '_debut'];
+            const fin = state.setTimestamps['set' + setNum + '_fin'];
             if (!debut || !fin) return '';
-            var ms = new Date(fin) - new Date(debut);
-            var mins = Math.floor(ms / 60000);
-            var secs = Math.floor((ms % 60000) / 1000);
+            const ms = new Date(fin) - new Date(debut);
+            const mins = Math.floor(ms / 60000);
+            const secs = Math.floor((ms % 60000) / 1000);
             return mins + ':' + String(secs).padStart(2, '0');
         },
 

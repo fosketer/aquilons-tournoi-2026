@@ -20,23 +20,23 @@ function shortName(name) {
 // ==========================================
 
 function parsePoolData(rows, pools, columns) {
-    var SG = columns.sg;
-    var SP = columns.sp;
-    var PP = columns.pp;
-    var PC = columns.pc;
-    var SGSP = columns.sgsp;
-    var PPPC = columns.pppc;
-    var RG = columns.rg;
+    const SG = columns.sg;
+    const SP = columns.sp;
+    const PP = columns.pp;
+    const PC = columns.pc;
+    const SGSP = columns.sgsp;
+    const PPPC = columns.pppc;
+    const RG = columns.rg;
 
-    var data = {};
+    const data = {};
     pools.forEach(function(pool) {
         data[pool.name] = [];
         pool.teams.forEach(function(team, idx) {
-            var teamId = pool.ids[idx];
-            for (var r = 0; r < rows.length; r++) {
-                var row = rows[r];
+            const teamId = pool.ids[idx];
+            for (let r = 0; r < rows.length; r++) {
+                const row = rows[r];
                 if (row[1] && row[1].trim() === String(teamId)) {
-                    var v = function(c) { return row[c] ? row[c].trim() : null; };
+                    const v = function(c) { return row[c] ? row[c].trim() : null; };
                     data[pool.name].push({
                         id: teamId, name: team,
                         sg: v(SG), sp: v(SP), pp: v(PP), pc: v(PC),
@@ -52,9 +52,9 @@ function parsePoolData(rows, pools, columns) {
         // Sort: by RG if available, else by SG desc then PP desc
         data[pool.name].sort(function(a, b) {
             if (a.rg && b.rg) return parseInt(a.rg) - parseInt(b.rg);
-            var sgA = parseInt(a.sg) || 0, sgB = parseInt(b.sg) || 0;
+            const sgA = parseInt(a.sg) || 0, sgB = parseInt(b.sg) || 0;
             if (sgA !== sgB) return sgB - sgA;
-            var ppa = parseInt(a.pp) || 0, ppb = parseInt(b.pp) || 0;
+            const ppa = parseInt(a.pp) || 0, ppb = parseInt(b.pp) || 0;
             return ppb - ppa;
         });
     });
@@ -62,14 +62,14 @@ function parsePoolData(rows, pools, columns) {
 }
 
 function parseMatchGrid(rows, pool) {
-    var matches = [];
+    const matches = [];
     // Find header row with all 4 team IDs
-    var colOf = {};
-    for (var r = 0; r < rows.length; r++) {
-        var found = 0; var tmpCols = {};
-        for (var c = 0; c < rows[r].length; c++) {
-            var v = (rows[r][c] || '').trim();
-            for (var t = 0; t < pool.ids.length; t++) {
+    let colOf = {};
+    for (let r = 0; r < rows.length; r++) {
+        let found = 0; const tmpCols = {};
+        for (let c = 0; c < rows[r].length; c++) {
+            const v = (rows[r][c] || '').trim();
+            for (let t = 0; t < pool.ids.length; t++) {
                 if (v === String(pool.ids[t])) { tmpCols[pool.ids[t]] = c; found++; }
             }
         }
@@ -78,10 +78,10 @@ function parseMatchGrid(rows, pool) {
     if (!Object.keys(colOf).length) return matches;
 
     // Find team data rows (first occurrence only)
-    var teamRows = {};
-    for (var r2 = 0; r2 < rows.length; r2++) {
+    const teamRows = {};
+    for (let r2 = 0; r2 < rows.length; r2++) {
         if (rows[r2][1]) {
-            var tid = parseInt(rows[r2][1].trim());
+            const tid = parseInt(rows[r2][1].trim());
             if (pool.ids.indexOf(tid) >= 0 && !teamRows[tid]) {
                 teamRows[tid] = [rows[r2], rows[r2 + 1] || []];
             }
@@ -89,18 +89,18 @@ function parseMatchGrid(rows, pool) {
     }
 
     // Extract match scores for each pair (upper triangle)
-    for (var i = 0; i < pool.ids.length; i++) {
-        for (var j = i + 1; j < pool.ids.length; j++) {
-            var idA = pool.ids[i], idB = pool.ids[j];
+    for (let i = 0; i < pool.ids.length; i++) {
+        for (let j = i + 1; j < pool.ids.length; j++) {
+            const idA = pool.ids[i], idB = pool.ids[j];
             if (!teamRows[idA]) continue;
-            var r1 = teamRows[idA][0], r2a = teamRows[idA][1];
-            var col = colOf[idB];
-            var s1a = parseInt((r1[col] || '').trim());
-            var s1b = parseInt((r1[col + 1] || '').trim());
-            var s2a = parseInt((r2a[col] || '').trim());
-            var s2b = parseInt((r2a[col + 1] || '').trim());
+            const r1 = teamRows[idA][0], r2a = teamRows[idA][1];
+            const col = colOf[idB];
+            const s1a = parseInt((r1[col] || '').trim());
+            const s1b = parseInt((r1[col + 1] || '').trim());
+            const s2a = parseInt((r2a[col] || '').trim());
+            const s2b = parseInt((r2a[col + 1] || '').trim());
             if (!isNaN(s1a) && !isNaN(s1b)) {
-                var setsA = 0, setsB = 0;
+                let setsA = 0, setsB = 0;
                 if (s1a > s1b) setsA++; else setsB++;
                 if (!isNaN(s2a) && !isNaN(s2b)) { if (s2a > s2b) setsA++; else setsB++; }
                 matches.push({
@@ -115,11 +115,11 @@ function parseMatchGrid(rows, pool) {
 }
 
 function computeCrossRanking(poolData) {
-    var seconds = [];
-    for (var pName in poolData) {
-        var teams = poolData[pName];
+    const seconds = [];
+    for (const pName in poolData) {
+        const teams = poolData[pName];
         if (teams.length >= 2) {
-            var t = teams[1]; // 2nd place (already sorted)
+            const t = teams[1]; // 2nd place (already sorted)
             seconds.push({
                 name: t.name, pool: pName,
                 sg: parseInt(t.sg) || 0, sp: parseInt(t.sp) || 0,
@@ -129,8 +129,8 @@ function computeCrossRanking(poolData) {
         }
     }
     seconds.sort(function(a, b) {
-        var ra = a.sp > 0 ? a.sg / a.sp : (a.sg > 0 ? 999 : 0);
-        var rb = b.sp > 0 ? b.sg / b.sp : (b.sg > 0 ? 999 : 0);
+        const ra = a.sp > 0 ? a.sg / a.sp : (a.sg > 0 ? 999 : 0);
+        const rb = b.sp > 0 ? b.sg / b.sp : (b.sg > 0 ? 999 : 0);
         if (ra !== rb) return rb - ra;
         return b.pppc - a.pppc;
     });
@@ -142,19 +142,19 @@ function computeCrossRanking(poolData) {
 // ==========================================
 
 function renderPools(pools, data, allMatches, containerId, aquilonName) {
-    var container = document.getElementById(containerId);
+    const container = document.getElementById(containerId);
     container.innerHTML = pools.map(function(pool) {
-        var teams = data[pool.name] || pool.teams.map(function(t, i) {
+        const teams = data[pool.name] || pool.teams.map(function(t, i) {
             return { id: pool.ids[i], name: t, sg:null, sp:null, pp:null, pc:null, sgsp:null, pppc:null, rg:null };
         });
-        var hasData = teams.some(function(t) { return t.sg !== null; });
-        var matches = allMatches[pool.name] || [];
-        var totalPossible = 6; // 4 teams = 6 matches
-        var status = hasData ? matches.length + '/' + totalPossible + ' matchs' : 'En attente';
+        const hasData = teams.some(function(t) { return t.sg !== null; });
+        const matches = allMatches[pool.name] || [];
+        const totalPossible = 6; // 4 teams = 6 matches
+        const status = hasData ? matches.length + '/' + totalPossible + ' matchs' : 'En attente';
 
-        var rows = teams.map(function(t) {
-            var isAq = t.name === aquilonName;
-            var cls = isAq ? ' class="highlight"' : '';
+        const rows = teams.map(function(t) {
+            const isAq = t.name === aquilonName;
+            const cls = isAq ? ' class="highlight"' : '';
             if (!hasData) {
                 return '<tr' + cls + '><td>' + escapeHTML(shortName(t.name)) + '</td><td class="no-data" colspan="5">\u2014</td></tr>';
             }
@@ -169,18 +169,18 @@ function renderPools(pools, data, allMatches, containerId, aquilonName) {
                 '</tr>';
         }).join('');
 
-        var thExtra = hasData ?
+        const thExtra = hasData ?
             '<th>SG</th><th>SP</th><th>PP</th><th>PC</th><th>PP/PC</th><th class="rg">Rg</th>' :
             '<th colspan="5"></th>';
 
-        var matchHtml = '';
+        let matchHtml = '';
         if (matches.length > 0) {
             matchHtml = '<div class="match-list"><div class="match-list-title">R\u00e9sultats des matchs</div>';
             matches.forEach(function(m) {
-                var isAqA = m.teamA === aquilonName;
-                var isAqB = m.teamB === aquilonName;
-                var clsA = isAqA ? ' aq' : '';
-                var clsB = isAqB ? ' aq' : '';
+                const isAqA = m.teamA === aquilonName;
+                const isAqB = m.teamB === aquilonName;
+                const clsA = isAqA ? ' aq' : '';
+                const clsB = isAqB ? ' aq' : '';
                 matchHtml += '<div class="ml-row">' +
                     '<span class="ml-team right' + clsA + '">' + escapeHTML(shortName(m.teamA)) + '</span>' +
                     '<span class="ml-sets"><span class="' + (m.setsA > m.setsB ? 'w' : m.setsA < m.setsB ? 'l' : '') + '">' + m.setsA + '</span>-<span class="' + (m.setsB > m.setsA ? 'w' : m.setsB < m.setsA ? 'l' : '') + '">' + m.setsB + '</span></span>' +
@@ -199,14 +199,14 @@ function renderPools(pools, data, allMatches, containerId, aquilonName) {
 }
 
 function renderCrossRanking(seconds, aquilonName) {
-    var container = document.getElementById('crossRanking');
+    const container = document.getElementById('crossRanking');
     if (!seconds.length) { container.innerHTML = ''; return; }
 
-    var labels = ['M2e', '2eM2e', '3eM2e', '4eM2e', '5eM2e'];
-    var rows = seconds.map(function(t, i) {
-        var isAq = t.name === aquilonName;
-        var cls = isAq ? ' class="highlight"' : '';
-        var ratio = t.sp > 0 ? (t.sg / t.sp).toFixed(2) : (t.sg > 0 ? '\u221e' : '0');
+    const labels = ['M2e', '2eM2e', '3eM2e', '4eM2e', '5eM2e'];
+    const rows = seconds.map(function(t, i) {
+        const isAq = t.name === aquilonName;
+        const cls = isAq ? ' class="highlight"' : '';
+        const ratio = t.sp > 0 ? (t.sg / t.sp).toFixed(2) : (t.sg > 0 ? '\u221e' : '0');
         return '<tr' + cls + '>' +
             '<td class="rg-cell">' + (labels[i] || (i+1)) + '</td>' +
             '<td>' + escapeHTML(shortName(t.name)) + '</td>' +
@@ -223,27 +223,27 @@ function renderCrossRanking(seconds, aquilonName) {
 }
 
 function renderProjection(poolData, seconds, aquilonName) {
-    var container = document.getElementById('projection');
+    const container = document.getElementById('projection');
     // Find Aquilons
-    var aqPool = null, aqRank = -1;
-    for (var pName in poolData) {
-        var teams = poolData[pName];
-        for (var i = 0; i < teams.length; i++) {
+    let aqPool = null, aqRank = -1;
+    for (const pName in poolData) {
+        const teams = poolData[pName];
+        for (let i = 0; i < teams.length; i++) {
             if (teams[i].name === aquilonName) { aqPool = pName; aqRank = i + 1; break; }
         }
         if (aqPool) break;
     }
     if (!aqPool) { container.innerHTML = ''; return; }
 
-    var seedLabel = '';
+    let seedLabel = '';
     if (aqRank === 1) {
         seedLabel = '1er ' + aqPool.replace('Pool ', '') + ' \u2192 Tier 1 (bye en quart de finale)';
     } else if (aqRank === 2) {
-        var crossIdx = -1;
-        for (var i = 0; i < seconds.length; i++) {
+        let crossIdx = -1;
+        for (let i = 0; i < seconds.length; i++) {
             if (seconds[i].name === aquilonName) { crossIdx = i; break; }
         }
-        var labels = ['M2e', '2eM2e', '3eM2e', '4eM2e', '5eM2e'];
+        const labels = ['M2e', '2eM2e', '3eM2e', '4eM2e', '5eM2e'];
         seedLabel = (crossIdx >= 0 ? labels[crossIdx] : '?') + ' \u2192 Tier 1';
         if (crossIdx >= 0) seedLabel += ' (huiti\u00e8me de finale)';
     } else if (aqRank === 3) {
@@ -265,11 +265,11 @@ function renderProjection(poolData, seconds, aquilonName) {
 // ==========================================
 
 function buildPageHTML(cfg) {
-    var sheetId = cfg.sheets.id;
-    var gidTier1 = cfg.sheets.gids.elim_d2_tier1;
-    var gidTier2 = cfg.sheets.gids.elim_d2_tier2;
-    var tier1Url = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/htmlview#gid=' + gidTier1;
-    var tier2Url = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/htmlview#gid=' + gidTier2;
+    const sheetId = cfg.sheets.id;
+    const gidTier1 = cfg.sheets.gids.elim_d2_tier1;
+    const gidTier2 = cfg.sheets.gids.elim_d2_tier2;
+    const tier1Url = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/htmlview#gid=' + gidTier1;
+    const tier2Url = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/htmlview#gid=' + gidTier2;
 
     return '<div class="content">' +
         '<button class="refresh-btn" id="refreshBtn">Rafra\u00eechir les donn\u00e9es</button>' +
@@ -299,8 +299,8 @@ async function init(slug) {
     showLoading(app);
 
     try {
-        var config = await getTournoiConfig(slug);
-        var cfg = config.config || {};
+        const config = await getTournoiConfig(slug);
+        const cfg = config.config || {};
 
         // Guard: if no sheets config, show empty state
         if (!cfg.sheets) {
@@ -308,17 +308,17 @@ async function init(slug) {
             return;
         }
 
-        var sheetId = cfg.sheets.id;
-        var gidD2 = cfg.sheets.gids.d2_resultats;
-        var poolsDef = cfg.sheets.pools;
-        var aquilonName = cfg.sheets.aquilon_name;
-        var columns = cfg.sheets.columns;
+        const sheetId = cfg.sheets.id;
+        const gidD2 = cfg.sheets.gids.d2_resultats;
+        const poolsDef = cfg.sheets.pools;
+        const aquilonName = cfg.sheets.aquilon_name;
+        const columns = cfg.sheets.columns;
 
         // Build page structure
         app.innerHTML = buildPageHTML(cfg);
 
         // Wire refresh button
-        var refreshBtn = document.getElementById('refreshBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
         refreshBtn.addEventListener('click', fetchAll);
 
         // Render empty pools initially
@@ -327,9 +327,9 @@ async function init(slug) {
         async function fetchAll() {
             document.getElementById('lastRefresh').textContent = 'Chargement...';
             try {
-                var d2Rows = await fetchSheet(sheetId, gidD2);
-                var poolData = {};
-                var allMatches = {};
+                const d2Rows = await fetchSheet(sheetId, gidD2);
+                let poolData = {};
+                let allMatches = {};
 
                 if (d2Rows) {
                     poolData = parsePoolData(d2Rows, poolsDef, columns);
@@ -340,11 +340,11 @@ async function init(slug) {
 
                 renderPools(poolsDef, poolData, allMatches, 'poolsD2', aquilonName);
 
-                var seconds = computeCrossRanking(poolData);
+                const seconds = computeCrossRanking(poolData);
                 renderCrossRanking(seconds, aquilonName);
                 renderProjection(poolData, seconds, aquilonName);
 
-                var now = new Date();
+                const now = new Date();
                 document.getElementById('lastRefresh').textContent =
                     'Derni\u00e8re mise \u00e0 jour\u00a0: ' + now.getHours() + 'h' + String(now.getMinutes()).padStart(2, '0');
             } catch (e) {
@@ -357,7 +357,7 @@ async function init(slug) {
         await fetchAll();
 
         // Auto-refresh every 2 minutes
-        var interval = setInterval(fetchAll, 120000);
+        const interval = setInterval(fetchAll, 120000);
         cleanup = function() { clearInterval(interval); };
 
     } catch (e) {
