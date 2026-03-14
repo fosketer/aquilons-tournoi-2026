@@ -2,6 +2,8 @@
 import { getTournoiActif, getTournoiConfig, setTournoiActif, listTournois } from '../config.js';
 import { fetchSheet } from '../lib/sheets.js';
 import { showLoading, showError, showEmpty, escapeHTML } from '../lib/ui.js';
+import { polling } from '../lib/polling.js';
+import { SHEETS_REFRESH_INTERVAL_MS } from '../lib/constants.js';
 import '../components/app-header.js';
 
 const app = document.getElementById('app');
@@ -357,8 +359,8 @@ async function init(slug) {
         await fetchAll();
 
         // Auto-refresh every 2 minutes
-        const interval = setInterval(fetchAll, 120000);
-        cleanup = function() { clearInterval(interval); };
+        polling.schedule('sheets-refresh', fetchAll, SHEETS_REFRESH_INTERVAL_MS);
+        cleanup = function() { polling.cancel('sheets-refresh'); };
 
     } catch (e) {
         showError(app, 'Impossible de charger les donn\u00e9es', function() { init(slug); });

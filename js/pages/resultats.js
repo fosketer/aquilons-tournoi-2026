@@ -4,6 +4,8 @@ import { getClient, fetchRows, subscribe, removeAllChannels } from '../lib/supab
 import { createEngine } from '../lib/scorekeeper-engine.js';
 import { fetchSheet } from '../lib/sheets.js';
 import { showLoading, showError, escapeHTML } from '../lib/ui.js';
+import { polling } from '../lib/polling.js';
+import { BRACKET_SCAN_INTERVAL_MS } from '../lib/constants.js';
 import '../components/app-header.js';
 import '../components/match-card.js';
 
@@ -697,7 +699,6 @@ async function scanBrackets(config, cfg) {
 // ==========================================
 
 let bracketScanStarted = false;
-let bracketInterval = null;
 
 function toggleScorekeeper() {
     const skEl = document.getElementById('scorekeeper');
@@ -707,7 +708,7 @@ function toggleScorekeeper() {
         if (cfg.sheets) {
             bracketScanStarted = true;
             scanBrackets(currentConfig, cfg);
-            bracketInterval = setInterval(function() { scanBrackets(currentConfig, cfg); }, 120000);
+            polling.schedule('bracket-scan', function() { scanBrackets(currentConfig, cfg); }, BRACKET_SCAN_INTERVAL_MS);
         }
     }
 }
@@ -748,7 +749,6 @@ async function init(slug) {
         // Check ?score parameter
         const urlParams = new URLSearchParams(window.location.search);
         bracketScanStarted = false;
-        bracketInterval = null;
         if (urlParams.has('score')) {
             document.getElementById('scorekeeper').classList.add('show');
             bracketScanStarted = true;
@@ -762,7 +762,7 @@ async function init(slug) {
         // Start bracket scanner if scorekeeper is visible and tournament has sheets
         if (bracketScanStarted && cfg.sheets) {
             scanBrackets(config, cfg);
-            bracketInterval = setInterval(function() { scanBrackets(config, cfg); }, 120000);
+            polling.schedule('bracket-scan', function() { scanBrackets(config, cfg); }, BRACKET_SCAN_INTERVAL_MS);
         }
 
         // Realtime subscription
@@ -771,8 +771,7 @@ async function init(slug) {
         // Cleanup function
         cleanup = function() {
             removeAllChannels();
-            if (bracketInterval) clearInterval(bracketInterval);
-            bracketInterval = null;
+            polling.cancelAll();
             bracketScanStarted = false;
             adversairesMap = {};
             matchDbId = null;
