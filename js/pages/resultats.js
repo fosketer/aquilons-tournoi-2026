@@ -378,12 +378,12 @@ function skSync() {
     } else {
         updates.statut = 'live';
     }
+    // .then(successFn, errorFn) — Supabase v2.49.1 builders are PromiseLike, not full Promise (no .catch)
     sb.from('matchs').update(updates).eq('id', matchDbId)
         .then(function(res) {
             if (res.error) skSetSync('Erreur sync', 'error');
             else skSetSync('Sync OK', 'connected');
-        })
-        .catch(function(error) {
+        }, function(error) {
             console.error('[skSync] Update failed:', error);
             skSetSync('Erreur sync', 'error');
         });
@@ -691,10 +691,12 @@ async function init(slug) {
         // Polling fallback — catches cases where realtime silently drops
         polling.schedule('match-poll', function() { loadMatchs(config); }, MATCH_POLL_INTERVAL_MS);
 
-        // Visibility handler — refresh data when phone wakes up
+        // Visibility handler — refresh data when phone wakes up, reset poll to avoid double-fetch
         function onVisibilityChange() {
             if (!document.hidden) {
+                polling.cancel('match-poll');
                 loadMatchs(config);
+                polling.schedule('match-poll', function() { loadMatchs(config); }, MATCH_POLL_INTERVAL_MS);
             }
         }
         document.addEventListener('visibilitychange', onVisibilityChange);

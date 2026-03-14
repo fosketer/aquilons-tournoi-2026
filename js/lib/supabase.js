@@ -56,7 +56,7 @@ export function subscribe(channelName, table, callback) {
                     scheduleReconnect();
                 }
             });
-        activeSubscriptions.set(channelName, { channel: ch, reconnect: connect, remove: cleanup });
+        activeSubscriptions.set(channelName, { channel: ch, remove: cleanup });
     }
 
     function scheduleReconnect() {
@@ -64,7 +64,7 @@ export function subscribe(channelName, table, callback) {
         reconnectTimer = setTimeout(function() {
             reconnectTimer = null;
             if (removed) return;
-            try { getClient().removeChannel(activeSubscriptions.get(channelName)?.channel); } catch(e) {}
+            try { getClient().removeChannel(activeSubscriptions.get(channelName)?.channel); } catch(e) { console.debug('[realtime] cleanup:', e); }
             connect();
         }, reconnectDelay);
         reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY_MS);
@@ -82,7 +82,7 @@ export function unsubscribe(channelName) {
     const sub = activeSubscriptions.get(channelName);
     if (sub) {
         sub.remove();
-        try { getClient().removeChannel(sub.channel); } catch(e) {}
+        try { getClient().removeChannel(sub.channel); } catch(e) { console.debug('[realtime] cleanup:', e); }
         activeSubscriptions.delete(channelName);
     }
 }
