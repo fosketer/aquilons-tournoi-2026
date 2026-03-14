@@ -3,7 +3,7 @@ import { getTournoiActif, getTournoiConfig, setTournoiActif, listTournois } from
 import { getClient, fetchRows, subscribe, removeAllChannels } from '../lib/supabase.js';
 import { createEngine } from '../lib/scorekeeper-engine.js';
 import { fetchSheet } from '../lib/sheets.js';
-import { showLoading, showError } from '../lib/ui.js';
+import { showLoading, showError, escapeHTML } from '../lib/ui.js';
 import '../components/app-header.js';
 import '../components/match-card.js';
 
@@ -151,7 +151,7 @@ function renderScoreboard(matchs) {
     if (isLive && target.set_courant > 0) {
         setInfo = 'Set ' + target.set_courant + ' en cours';
     } else if (!isLive) {
-        setInfo = target.heure + (target.match_externe ? ' \u00b7 M' + target.match_externe : '');
+        setInfo = escapeHTML(target.heure || '') + (target.match_externe ? ' \u00b7 M' + target.match_externe : '');
     }
 
     var setsHtml = '';
@@ -174,7 +174,7 @@ function renderScoreboard(matchs) {
 
     var venueHtml = '';
     if (!isLive && target.lieu_nom) {
-        venueHtml = '<div class="sb-match-time"><span class="venue">' + target.lieu_nom + ' \u2014 ' + target.terrain + '</span></div>';
+        venueHtml = '<div class="sb-match-time"><span class="venue">' + escapeHTML(target.lieu_nom || '') + ' \u2014 ' + escapeHTML(target.terrain || '') + '</span></div>';
     }
 
     container.innerHTML =
@@ -189,7 +189,7 @@ function renderScoreboard(matchs) {
                 '</div>' +
                 '<div class="sb-vs">-</div>' +
                 '<div class="sb-team">' +
-                    '<div class="sb-team-name adv">' + target.adversaire + '</div>' +
+                    '<div class="sb-team-name adv">' + escapeHTML(target.adversaire || '') + '</div>' +
                     '<div class="sb-score adv">' + advScore + '</div>' +
                 '</div>' +
             '</div>' +
@@ -277,7 +277,7 @@ function skSave() {
             advName: skSession.advName,
             engine: engine ? engine.getState() : null
         }));
-    } catch(e) {}
+    } catch(e) { console.error('[skSave] Failed to save scorekeeper state:', e); }
 }
 
 function skLoad() {
@@ -301,7 +301,7 @@ function skLoad() {
                 .single()
                 .then(function(res) { if (res.data) matchDbId = res.data.id; });
         }
-    } catch(e) {}
+    } catch(e) { console.error('[skLoad] Failed to restore scorekeeper state:', e); }
 }
 
 // ==========================================
@@ -340,7 +340,7 @@ function skRenderSetHistory(st) {
         return '<div class="sk-set-result">' +
             '<span class="sn">Set ' + (i + 1) + '</span>' +
             '<span class="ss ' + (won ? 'won' : 'lost') + '">' + s.aq + ' - ' + s.adv + durHtml + '</span>' +
-            '<span class="sw ' + (won ? 'aq' : 'adv') + '">' + (won ? 'Aquilons' : skSession.advName) + '</span>' +
+            '<span class="sw ' + (won ? 'aq' : 'adv') + '">' + (won ? 'Aquilons' : escapeHTML(skSession.advName)) + '</span>' +
         '</div>';
     }).join('');
 }
@@ -735,7 +735,7 @@ async function init(slug) {
         app.innerHTML = buildPageHTML(engine.getMaxSets());
 
         // Update footer
-        document.getElementById('pageFooter').innerHTML = 'Aquilons \u00b7 Jean de Br\u00e9beuf \u00b7 ' + config.nom;
+        document.getElementById('pageFooter').innerHTML = 'Aquilons \u00b7 Jean de Br\u00e9beuf \u00b7 ' + escapeHTML(config.nom || '');
 
         // Wire event handlers
         document.getElementById('skMatchSelect').addEventListener('change', skSelectMatch);
