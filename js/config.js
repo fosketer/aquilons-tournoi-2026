@@ -1,7 +1,10 @@
 // js/config.js
 import { getClient } from './lib/supabase.js';
+import { TOURNOI_LIST_CACHE_TTL_MS } from './lib/constants.js';
 
 let cache = {};
+let listCache = null;
+let listCacheTime = 0;
 
 export async function getTournoiConfig(slug) {
     if (cache[slug]) return cache[slug];
@@ -13,11 +16,15 @@ export async function getTournoiConfig(slug) {
 }
 
 export async function listTournois() {
-    if (cache._list) return cache._list;
+    const now = Date.now();
+    if (listCache && now - listCacheTime < TOURNOI_LIST_CACHE_TTL_MS) {
+        return listCache;
+    }
     const { data, error } = await getClient()
         .from('tournois').select('id,nom,slug,equipe,config').order('nom');
     if (error) throw error;
-    cache._list = data;
+    listCache = data;
+    listCacheTime = now;
     return data;
 }
 
