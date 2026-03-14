@@ -265,7 +265,7 @@ function skSave() {
     } catch(e) { console.error('[skSave] Failed to save scorekeeper state:', e); }
 }
 
-function skLoad() {
+async function skLoad() {
     try {
         const s = localStorage.getItem(SK_KEY);
         if (!s) return;
@@ -280,11 +280,11 @@ function skLoad() {
             document.getElementById('skAdvInfo').textContent = advInfoText(skSession.advName);
             document.getElementById('skPanel').classList.add('show');
             skApplyUI();
-            getClient().from('matchs').select('id')
+            const res = await getClient().from('matchs').select('id')
                 .eq('tournoi_id', currentConfig.id)
                 .eq('numero', parseInt(skSession.matchNum))
-                .single()
-                .then(function(res) { if (res.data) matchDbId = res.data.id; });
+                .single();
+            if (res.data) matchDbId = res.data.id;
         }
     } catch(e) { console.error('[skLoad] Failed to restore scorekeeper state:', e); }
 }
@@ -378,17 +378,22 @@ function skSync() {
     } else {
         updates.statut = 'live';
     }
-    sb.from('matchs').update(updates).eq('id', matchDbId).then(function(res) {
-        if (res.error) skSetSync('Erreur sync', 'error');
-        else skSetSync('Sync OK', 'connected');
-    });
+    sb.from('matchs').update(updates).eq('id', matchDbId)
+        .then(function(res) {
+            if (res.error) skSetSync('Erreur sync', 'error');
+            else skSetSync('Sync OK', 'connected');
+        })
+        .catch(function(error) {
+            console.error('[skSync] Update failed:', error);
+            skSetSync('Erreur sync', 'error');
+        });
 }
 
 // ==========================================
 // SCOREKEEPER ACTIONS
 // ==========================================
 
-function skSelectMatch() {
+async function skSelectMatch() {
     const sel = document.getElementById('skMatchSelect');
     const opt = sel.options[sel.selectedIndex];
     if (!opt.value) {
@@ -412,17 +417,20 @@ function skSelectMatch() {
     skUpdateDisabled();
     skSave();
 
-    const sbClient = getClient();
-    sbClient.from('matchs').select('id')
-        .eq('tournoi_id', currentConfig.id)
-        .eq('numero', parseInt(opt.value))
-        .single()
-        .then(function(res) {
-            if (res.data) {
-                matchDbId = res.data.id;
-                sbClient.from('points').delete().eq('match_id', matchDbId).then(function() { skSync(); });
-            }
-        });
+    try {
+        const sbClient = getClient();
+        const res = await sbClient.from('matchs').select('id')
+            .eq('tournoi_id', currentConfig.id)
+            .eq('numero', parseInt(opt.value))
+            .single();
+        if (res.data) {
+            matchDbId = res.data.id;
+            await sbClient.from('points').delete().eq('match_id', matchDbId);
+            skSync();
+        }
+    } catch (error) {
+        console.error('[skSelectMatch] Failed:', error);
+    }
 }
 
 function skPoint(team) {
@@ -442,7 +450,7 @@ function skPoint(team) {
             equipe: team,
             aq_score: result.aqScore,
             adv_score: result.advScore
-        }).then(function() {});
+        }).catch(function(error) { console.error('[skPoint] Insert failed:', error); });
     }
 
     if (result.setEnded) {
@@ -472,7 +480,7 @@ function skShowResult(st) {
         '<div class="rd">' + details + '</div>';
 }
 
-function skMinus(team) {
+async function skMinus(team) {
     if (!skSession.matchNum) return;
     if (!engine.undoPoint(team)) return;
 
@@ -482,15 +490,19 @@ function skMinus(team) {
     skSave();
 
     if (matchDbId) {
-        const sbClient = getClient();
-        sbClient.from('points').select('id')
-            .eq('match_id', matchDbId)
-            .eq('equipe', team)
-            .order('id', { ascending: false })
-            .limit(1)
-            .then(function(res) {
-                if (res.data && res.data[0]) sbClient.from('points').delete().eq('id', res.data[0].id).then(function() {});
-            });
+        try {
+            const sbClient = getClient();
+            const res = await sbClient.from('points').select('id')
+                .eq('match_id', matchDbId)
+                .eq('equipe', team)
+                .order('id', { ascending: false })
+                .limit(1);
+            if (res.data && res.data[0]) {
+                await sbClient.from('points').delete().eq('id', res.data[0].id);
+            }
+        } catch (error) {
+            console.error('[skMinus] Delete failed:', error);
+        }
         skSync();
     }
 }
@@ -506,7 +518,8 @@ function skResetSet() {
 
     if (matchDbId) {
         const sbClient = getClient();
-        sbClient.from('points').delete().eq('match_id', matchDbId).eq('set_num', setNum).then(function() {});
+        sbClient.from('points').delete().eq('match_id', matchDbId).eq('set_num', setNum)
+            .catch(function(error) { console.error('[skResetSet] Delete failed:', error); });
         skSync();
     }
 }
@@ -664,7 +677,7 @@ async function init(slug) {
         // Load data
         await loadAdversaires(config);
         await loadMatchs(config);
-        skLoad();
+        await skLoad();
 
         // Start bracket scanner if scorekeeper is visible and tournament has sheets
         if (bracketScanStarted && cfg.sheets) {
